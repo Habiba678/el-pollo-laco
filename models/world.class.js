@@ -3,131 +3,213 @@ class World {
     canvas;
     keyboard;
     camera_x = 0;
+
     level = level1;
-    throwableObjects = [];
     character = new Character();
     statusBar = new StatusBar();
-    clearRect =  new BackgroundObject('img/5.Fondo/Capas/5.cielo_1920-1080px.png', 0, 0);
+    throwableObjects = [];
+
+    /**
+     * Creates the world and starts the game rendering.
+     * @param {HTMLCanvasElement} canvas The canvas element.
+     * @param {Keyboard} keyboard The current keyboard state.
+     */
     constructor(canvas, keyboard) {
-        this.ctx = canvas.getContext('2d');
+        this.ctx = canvas.getContext("2d");
         this.canvas = canvas;
         this.keyboard = keyboard;
+
+        this.setWorldReference();
+        this.startWorldChecks();
         this.draw();
-        this.setWorld();
-        this.run();
     }
 
-    setWorld() {
+    /**
+     * Gives the character access to this world.
+     */
+    setWorldReference() {
         this.character.world = this;
-        console.log(this);
     }
 
-    run() {
+    /**
+     * Starts repeated checks for collisions and throw actions.
+     */
+    startWorldChecks() {
         setInterval(() => {
-            this.checkCollisions();
-            this.checkThrowObjects();
+            this.checkEnemyContact();
+            this.checkCollectibles();
+            this.checkBottleThrow();
+            this.checkBottleHits();
         }, 200);
     }
 
-    checkThrowObjects() {
-        if (this.keyboard.D) {
-            let bottle = new ThrowableObject(this.character.x + 100, this.character.y + 100);
-            this.throwableObjects.push(bottle);
-        }
-        this.throwableObjects.forEach( throwableObject =>{
-            this.level.enemies.forEach( enemy =>{
-                if(!enemy.isDead()){
-                    if(throwableObject.isColliding(enemy)){
-                        console.log("Enemy Hit");
-                        enemy.kill();
-                        setTimeout(()=>{
-                            let position = this.level.enemies.indexOf(enemy);
-                            this.level.enemies.splice(position, 1);
-                        }, 2000);
-                    }
-                }
-            });
-        } );
+    /**
+     * Throws a bottle when the throw key is pressed.
+     */
+    checkBottleThrow() {
+        if (!this.keyboard.D) return;
+
+        const bottle = new ThrowableObject(
+            this.character.x + 100,
+            this.character.y + 100
+        );
+
+        this.throwableObjects.push(bottle);
+        this.keyboard.D = false;
     }
 
-    checkCollisions() {
+    /**
+     * Checks if the character touches an enemy.
+     */
+    checkEnemyContact() {
         this.level.enemies.forEach((enemy) => {
-            if (this.character.isColliding(enemy)) {
-                this.character.hit();
-                this.statusBar.setPercentage(this.character.energy);
-            }
+            if (!this.character.isColliding(enemy)) return;
+
+            this.character.hit();
+            this.statusBar.setPercentage(this.character.energy);
         });
-        this.checkCollisionsWihtCollectibles(this.level.coins);
-        //this.checkCollisionsWihtCollectibles(this.bottles);
     }
 
-    checkCollisionsWihtCollectibles(array){
-        array.forEach((element, index)=>{
-            if(this.character.isColliding(element)){
-               array.splice(index, 1);
+    /**
+     * Checks collectible objects from the level.
+     */
+    checkCollectibles() {
+        if (this.level.coins) {
+            this.removeCollectedItems(this.level.coins);
+        }
+    }
+
+    /**
+     * Removes collected items from an array.
+     * @param {DrawableObject[]} items The collectible items.
+     */
+    removeCollectedItems(items) {
+        for (let index = items.length - 1; index >= 0; index--) {
+            if (this.character.isColliding(items[index])) {
+                items.splice(index, 1);
             }
+        }
+    }
+
+    /**
+     * Checks if thrown bottles hit enemies.
+     */
+    checkBottleHits() {
+        this.throwableObjects.forEach((bottle) => {
+            this.level.enemies.forEach((enemy) => {
+                this.handleBottleEnemyContact(bottle, enemy);
+            });
         });
     }
-    //Draw() wird immer wieder aufgerufen
+
+    /**
+     * Handles one bottle and one enemy contact.
+     * @param {ThrowableObject} bottle The thrown bottle.
+     * @param {MovableObject} enemy The enemy.
+     */
+    handleBottleEnemyContact(bottle, enemy) {
+        if (!bottle.isColliding(enemy)) return;
+
+        if (typeof enemy.defeat === "function") {
+            enemy.defeat();
+            return;
+        }
+
+        if (typeof enemy.kill === "function") {
+            enemy.kill();
+        }
+    }
+
+    /**
+     * Draws the complete world.
+     */
     draw() {
-        // this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-        this.addToMap(this.clearRect);
+        this.clearCanvas();
+        this.drawBackgroundArea();
+        this.drawGameArea();
+        this.drawScreenArea();
+
+        requestAnimationFrame(() => this.draw());
+    }
+
+    /**
+     * Clears the canvas before drawing the next frame.
+     */
+    clearCanvas() {
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    }
+
+    /**
+     * Draws background and clouds.
+     */
+    drawBackgroundArea() {
         this.addObjectsToMap(this.level.clouds);
-
-        // this.ctx.translate(this.camera_x, 0);
         this.addObjectsToMap(this.level.backgroundObjects);
-        // this.ctx.translate(-this.camera_x, 0); //Back
+    }
 
-        this.ctx.translate(this.camera_x, 0); //Forwards
-       
+    /**
+     * Draws all objects that move with the camera.
+     */
+    drawGameArea() {
+        this.ctx.translate(this.camera_x, 0);
+
         this.addObjectsToMap(this.throwableObjects);
-        this.addObjectsToMap(this.level.coins);
+        this.addObjectsToMap(this.level.coins || []);
         this.addObjectsToMap(this.level.enemies);
         this.addToMap(this.character);
+
         this.ctx.translate(-this.camera_x, 0);
+    }
 
-        // --------- Space for fixed Objects ---------
+    /**
+     * Draws fixed screen elements.
+     */
+    drawScreenArea() {
         this.addToMap(this.statusBar);
-        // --------- Space for fixed Objects End ---------
-
-        let self = this;
-        requestAnimationFrame(function () {
-            self.draw();
-        });
     }
 
+    /**
+     * Draws several objects.
+     * @param {DrawableObject[]} objects The objects to draw.
+     */
     addObjectsToMap(objects) {
-        objects.forEach(o => {
-            this.addToMap(o);
-        });
+        objects.forEach((object) => this.addToMap(object));
     }
 
-    addToMap(mo) {
-        if (mo.otherDirection) {
-            this.flipImage(mo);
+    /**
+     * Draws one object on the map.
+     * @param {DrawableObject} object The object to draw.
+     */
+    addToMap(object) {
+        if (object.otherDirection) {
+            this.flipImage(object);
         }
-        if(mo instanceof BackgroundObject){
-            this.ctx.translate(this.camera_x * mo.distance, 0);
-        }
-        mo.draw(this.ctx);
-        mo.drawFrame(this.ctx);
-        if(mo instanceof BackgroundObject){
-            this.ctx.translate(-this.camera_x * mo.distance, 0);
-        }
-        if (mo.otherDirection) {
-            this.flipImageBack(mo);
+
+        object.draw(this.ctx);
+        object.drawFrame(this.ctx);
+
+        if (object.otherDirection) {
+            this.flipImageBack(object);
         }
     }
 
-    flipImage(mo) {
+    /**
+     * Mirrors an object before drawing.
+     * @param {DrawableObject} object The object to mirror.
+     */
+    flipImage(object) {
         this.ctx.save();
-        this.ctx.translate(mo.width, 0);
+        this.ctx.translate(object.width, 0);
         this.ctx.scale(-1, 1);
-        mo.x = mo.x * -1;
+        object.x = object.x * -1;
     }
 
-    flipImageBack(mo) {
-        mo.x = mo.x * -1;
+    /**
+     * Restores the object after mirrored drawing.
+     * @param {DrawableObject} object The mirrored object.
+     */
+    flipImageBack(object) {
+        object.x = object.x * -1;
         this.ctx.restore();
     }
 }
