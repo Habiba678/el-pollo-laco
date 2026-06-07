@@ -1,32 +1,155 @@
 <!DOCTYPE html>
-<html lang="en">
-
+<html lang="de" translate="no">
 <head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="style.css">
-    <title>Document</title>
-    <script src="models/keyboard.class.js"></script>
-    <script src="models/drawable-object.class.js"></script>
-    <script src="models/movable-object.class.js"></script>
-    <script src="models/background-object.class.js"></script>
-    <script src="models/cloud.class.js"></script>
-    <script src="models/status-bar.class.js"></script>
-    <script src="models/throwable-object.class.js"></script>
-    <script src="models/coin.class.js"></script>
-    <script src="models/endboss.class.js"></script>
-    <script src="models/chicken.class.js"></script>
-    <script src="models/character.class.js"></script>
-    <script src="models/world.class.js"></script>
-    <script src="models/level.class.js"></script>
-    <script src="models/levels/level1.js"></script>
-    <script src="js/game.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>El Pollo Loco</title>
+
+  <link rel="icon" href="assets/img/7_statusbars/3_icons/icon_coin.png?v=5" type="image/png">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="styles/game.css">
+  <link rel="stylesheet" href="styles/responsive.css">
+  <link rel="stylesheet" href="styles/font.css">
+
+  <script src="models/drawable-object.class.js"></script>
+  <script src="models/movable-object.class.js"></script>
+  <script src="models/character.class.js"></script>
+  <script src="models/chicken.class.js"></script>
+  <script src="models/small-chicken.class.js"></script>
+  <script src="models/cloud.class.js"></script>
+  <script src="models/background-object.class.js"></script>
+  <script src="models/keyboard.class.js"></script>
+  <script src="models/level.class.js"></script>
+  <script src="models/status-bar.class.js"></script>
+  <script src="models/throwable-object.class.js"></script>
+  <script src="models/coin.class.js"></script>
+  <script src="models/endboss.class.js"></script>
+  <script src="levels/level1.js"></script>
+  <script src="models/world.class.js"></script>
+
+  <script src="js/template.js"></script>
+  <script src="js/game.js"></script>
 </head>
 
 <body onload="init()">
-    <!-- <h1 id="title">El Pollo Loco</h1> -->
-    <canvas id="canvas" width="720" height="480"></canvas>
-</body>
+  <main id="desertGameRoot" class="desert-game-root">
+    <div id="gameHeaderMount"></div>
 
+    <button id="backToMenuButton" class="back-to-menu-button" type="button">
+      Zurück zum Start
+    </button>
+
+    <canvas id="canvas" class="desert-canvas" width="720" height="480"></canvas>
+
+    <div id="gameIntroMount"></div>
+    <div id="gameFooterMount"></div>
+
+    <div class="player-input-board">
+      <div class="input-cluster input-movement">
+        <button id="walkLeftButton" class="input-round-button input-arrow-button" type="button" aria-label="Nach links laufen">
+          <span class="input-symbol">←</span>
+        </button>
+
+        <button id="walkRightButton" class="input-round-button input-arrow-button" type="button" aria-label="Nach rechts laufen">
+          <span class="input-symbol">→</span>
+        </button>
+      </div>
+
+      <div class="input-cluster input-action">
+        <button id="playerJumpButton" class="input-round-button input-action-button" type="button" aria-label="Springen">
+          <span class="input-symbol">↑</span>
+        </button>
+
+        <button id="bottleThrowButton" class="input-round-button input-action-button" type="button" aria-label="Flasche werfen">
+          <span class="input-symbol">⚔︎</span>
+        </button>
+      </div>
+    </div>
+
+    <div id="rotateDeviceDialog">
+      <div class="rotate-message-box">
+        <div class="rotate-message-title">Querformat nutzen</div>
+        <div class="rotate-message-text">
+          Drehe dein Gerät bitte seitlich,<br>
+          damit das Spielfeld vollständig sichtbar ist.
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <div id="imprintDialog" class="dialog-layer dialog-hidden" onclick="closeDialog('imprintDialog')">
+    <div class="dialog-card imprint-card" onclick="event.stopPropagation()">
+      <button class="dialog-close" type="button" onclick="closeDialog('imprintDialog')">×</button>
+
+      <h2 class="dialog-title">Rechtliche Angaben</h2>
+
+      <div class="dialog-content-scroll">
+        <div class="dialog-text-block">
+          <h3>Angaben zur Person</h3>
+          <p><strong>Habiba Mohamed</strong></p>
+          <p>An der Walkenmühle 20</p>
+          <p>33607 Bielefeld</p>
+          <p>Deutschland</p>
+        </div>
+
+        <div class="dialog-text-block">
+          <h3>Verantwortung</h3>
+          <p>Habiba Mohamed</p>
+        </div>
+
+        <div class="dialog-text-block">
+          <h3>Kontakt</h3>
+          <p>Telefon: +49 17632340703</p>
+          <p>E-Mail: hananhussain12@hotmail.com</p>
+        </div>
+
+        <div class="dialog-text-block">
+          <h3>Quellen</h3>
+          <p>Sounds, Grafiken und weitere Materialien werden im Projekt mit Quelle angegeben.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="instructionDialog" class="dialog-layer dialog-hidden" onclick="closeDialog('instructionDialog')">
+    <div class="dialog-card instruction-card" onclick="event.stopPropagation()">
+      <button class="dialog-close" type="button" onclick="closeDialog('instructionDialog')">×</button>
+
+      <h2 class="dialog-title">Spielhilfe</h2>
+
+      <div class="dialog-content-scroll">
+        <div class="dialog-text-block">
+          <h3>Bewegung</h3>
+          <ul>
+            <li><strong>Pfeil rechts:</strong> Figur bewegt sich nach rechts</li>
+            <li><strong>Pfeil links:</strong> Figur bewegt sich nach links</li>
+            <li><strong>Leertaste:</strong> Figur springt</li>
+            <li><strong>Taste D:</strong> Flasche werfen</li>
+          </ul>
+        </div>
+
+        <div class="dialog-text-block">
+          <h3>Gegner</h3>
+          <ul>
+            <li>Im Level erscheinen verschiedene Hühner.</li>
+            <li>Am Ende wartet ein größerer Gegner.</li>
+          </ul>
+        </div>
+
+        <div class="dialog-text-block">
+          <h3>Sammeln</h3>
+          <ul>
+            <li>Flaschen können gesammelt und später genutzt werden.</li>
+            <li>Münzen sind im Level verteilt.</li>
+          </ul>
+        </div>
+
+        <div class="dialog-text-block">
+          <h3>Ziel</h3>
+          <p>Bewege dich durch das Level, sammle hilfreiche Gegenstände und besiege den letzten Gegner.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
 </html>
