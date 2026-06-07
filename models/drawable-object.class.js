@@ -3,49 +3,52 @@ class DrawableObject {
     imageCache = {};
     currentImage = 0;
     x = 120;
-    y = 280; 
+    y = 280;
     height = 150;
     width = 100;
 
-
-
-    
-    // loadImage('img/test.png);
+    /**
+     * Loads one image for this object.
+     * @param {string} path Path to the image file.
+     */
     loadImage(path) {
-        this.img = new Image(); // this.img = document.getElementById('image') <img id="iamge" src>
+        this.img = new Image();
         this.img.src = path;
     }
 
-
+    /**
+     * Draws the object image on the canvas.
+     * @param {CanvasRenderingContext2D} ctx Canvas rendering context.
+     */
     draw(ctx) {
+        if (!this.img) return;
+
         ctx.drawImage(this.img, this.x, this.y, this.width, this.height);
     }
 
-
-    
+    /**
+     * Draws a debug frame around selected objects.
+     * @param {CanvasRenderingContext2D} ctx Canvas rendering context.
+     */
     drawFrame(ctx) {
         if (this instanceof Character || this instanceof Chicken) {
             ctx.beginPath();
-            ctx.lineWidth = '5';
-            ctx.strokeStyle = 'blue';
+            ctx.lineWidth = "5";
+            ctx.strokeStyle = "blue";
             ctx.rect(this.x, this.y, this.width, this.height);
             ctx.stroke();
         }
     }
 
-
-    
     /**
-     * 
-     * @param {Array} arr - ['img/image1.png', 'img/image2.png', ...] 
+     * Preloads several images and stores them in the image cache.
+     * @param {string[]} paths Image paths for animation frames.
      */
-     loadImages(arr) {
-        arr.forEach((path) => {
-            let img = new Image();
-            img.src = path;
-            img.style = 'transform: scaleX(-1)';
-            this.imageCache[path] = img;
+    loadImages(paths) {
+        paths.forEach((path) => {
+            const image = new Image();
+            image.src = path;
+            this.imageCache[path] = image;
         });
     }
-
 }
