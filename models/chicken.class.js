@@ -6,7 +6,7 @@ class Chicken extends MovableObject {
     y = 360;
     width = 120;
     height = 70;
-    speed = 0.1 + Math.random() * 0.45;
+    speed = 0.2 + Math.random() * 0.45;
     isDefeated = false;
 
     offset = {
