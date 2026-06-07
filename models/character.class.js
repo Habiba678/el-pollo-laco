@@ -14,7 +14,7 @@ class Character extends MovableObject {
         right: 25
     };
 
-    IMAGES_IDLE = [
+    idleImages = [
         "./assets/img/2_character_pepe/1_idle/idle/I-1.png",
         "./assets/img/2_character_pepe/1_idle/idle/I-2.png",
         "./assets/img/2_character_pepe/1_idle/idle/I-3.png",
@@ -25,7 +25,20 @@ class Character extends MovableObject {
         "./assets/img/2_character_pepe/1_idle/idle/I-10.png"
     ];
 
-    IMAGES_WALKING = [
+    longIdleImages = [
+        "./assets/img/2_character_pepe/1_idle/long_idle/I-11.png",
+        "./assets/img/2_character_pepe/1_idle/long_idle/I-12.png",
+        "./assets/img/2_character_pepe/1_idle/long_idle/I-13.png",
+        "./assets/img/2_character_pepe/1_idle/long_idle/I-14.png",
+        "./assets/img/2_character_pepe/1_idle/long_idle/I-15.png",
+        "./assets/img/2_character_pepe/1_idle/long_idle/I-16.png",
+        "./assets/img/2_character_pepe/1_idle/long_idle/I-17.png",
+        "./assets/img/2_character_pepe/1_idle/long_idle/I-18.png",
+        "./assets/img/2_character_pepe/1_idle/long_idle/I-19.png",
+        "./assets/img/2_character_pepe/1_idle/long_idle/I-20.png"
+    ];
+
+    walkingImages = [
         "./assets/img/2_character_pepe/2_walk/W-21.png",
         "./assets/img/2_character_pepe/2_walk/W-22.png",
         "./assets/img/2_character_pepe/2_walk/W-23.png",
@@ -34,7 +47,7 @@ class Character extends MovableObject {
         "./assets/img/2_character_pepe/2_walk/W-26.png"
     ];
 
-    IMAGES_JUMPING = [
+    jumpingImages = [
         "./assets/img/2_character_pepe/3_jump/J-31.png",
         "./assets/img/2_character_pepe/3_jump/J-32.png",
         "./assets/img/2_character_pepe/3_jump/J-33.png",
@@ -46,13 +59,13 @@ class Character extends MovableObject {
         "./assets/img/2_character_pepe/3_jump/J-39.png"
     ];
 
-    IMAGES_HURT = [
+    hurtImages = [
         "./assets/img/2_character_pepe/4_hurt/H-41.png",
         "./assets/img/2_character_pepe/4_hurt/H-42.png",
         "./assets/img/2_character_pepe/4_hurt/H-43.png"
     ];
 
-    IMAGES_DEAD = [
+    deadImages = [
         "./assets/img/2_character_pepe/5_dead/D-51.png",
         "./assets/img/2_character_pepe/5_dead/D-52.png",
         "./assets/img/2_character_pepe/5_dead/D-53.png",
@@ -62,103 +75,241 @@ class Character extends MovableObject {
         "./assets/img/2_character_pepe/5_dead/D-57.png"
     ];
 
+    walkAudio = new Audio("./assets/audio/run.mp3");
+    idleCounter = 0;
+    knockbackTimer = null;
+    isKnockedBack = false;
+
     constructor() {
         super();
-        this.loadImage(this.IMAGES_IDLE[0]);
+        this.loadImage(this.idleImages[0]);
         this.loadCharacterImages();
+        this.walkAudio.volume = 0.2;
         this.applyGravity();
-        this.startMovement();
-        this.startAnimation();
+        this.startCharacterLoops();
     }
 
     /**
-     * Loads all character image groups.
+     * Loads every animation group of the character.
      */
     loadCharacterImages() {
-        this.loadImages(this.IMAGES_IDLE);
-        this.loadImages(this.IMAGES_WALKING);
-        this.loadImages(this.IMAGES_JUMPING);
-        this.loadImages(this.IMAGES_HURT);
-        this.loadImages(this.IMAGES_DEAD);
+        this.loadImages(this.idleImages);
+        this.loadImages(this.longIdleImages);
+        this.loadImages(this.walkingImages);
+        this.loadImages(this.jumpingImages);
+        this.loadImages(this.hurtImages);
+        this.loadImages(this.deadImages);
     }
 
     /**
-     * Starts the movement loop.
+     * Starts movement and animation intervals.
      */
-    startMovement() {
-        setInterval(() => {
-            if (!this.world) return;
-
-            this.moveByKeyboard();
-            this.jumpByKeyboard();
-            this.updateCamera();
-        }, 1000 / 60);
+    startCharacterLoops() {
+        setInterval(() => this.updateCharacterMovement(), 1000 / 60);
+        setInterval(() => this.updateCharacterAnimation(), 80);
     }
 
     /**
-     * Handles left and right movement.
+     * Updates movement, jump and camera.
      */
-    moveByKeyboard() {
-        if (this.world.keyboard.RIGHT && this.x < this.world.level.level_end_x) {
+    updateCharacterMovement() {
+        if (!this.world || this.world.gameOver) return;
+
+        this.pauseWalkAudio();
+        this.moveCharacterSideways();
+        this.handleCharacterJump();
+        this.moveCameraWithCharacter();
+    }
+
+    /**
+     * Moves character left or right.
+     */
+    moveCharacterSideways() {
+        if (this.isKnockedBack) return;
+
+        if (this.canWalkRight()) {
             this.moveRight();
             this.otherDirection = false;
+            this.playWalkAudio();
+            this.resetIdleCounter();
         }
 
-        if (this.world.keyboard.LEFT && this.x > 0) {
+        if (this.canWalkLeft()) {
             this.moveLeft();
             this.otherDirection = true;
+            this.playWalkAudio();
+            this.resetIdleCounter();
         }
+    }
+
+    /**
+     * Checks if character may move right.
+     * @returns {boolean}
+     */
+    canWalkRight() {
+        return this.world.keyboard.RIGHT &&
+            this.x < this.world.level.level_end_x &&
+            !this.isBlockedByBoss();
+    }
+
+    /**
+     * Checks if character may move left.
+     * @returns {boolean}
+     */
+    canWalkLeft() {
+        return this.world.keyboard.LEFT && this.x > 0;
+    }
+
+    /**
+     * Blocks walking into the boss body.
+     * @returns {boolean}
+     */
+    isBlockedByBoss() {
+        const boss = this.world?.endbossManager?.endboss;
+
+        if (!boss || boss.isDead()) return false;
+
+        const characterRight = this.getRightSide();
+        const bossLeft = boss.getLeftSide ? boss.getLeftSide() : boss.x;
+
+        const characterBottom = this.getBottomSide();
+        const characterTop = this.getTopSide();
+        const bossTop = boss.getTopSide ? boss.getTopSide() : boss.y;
+        const bossBottom = boss.getBottomSide ? boss.getBottomSide() : boss.y + boss.height;
+
+        const touchesVerticalArea = characterBottom > bossTop && characterTop < bossBottom;
+        const reachesBoss = characterRight + this.speed >= bossLeft && this.x < boss.x;
+
+        return touchesVerticalArea && reachesBoss;
     }
 
     /**
      * Handles jump input.
      */
-    jumpByKeyboard() {
-        if (this.world.keyboard.SPACE) {
+    handleCharacterJump() {
+        if (this.isKnockedBack) return;
+
+        if (this.world.keyboard.SPACE && !this.isAboveGround()) {
             this.jump();
+            this.resetIdleCounter();
         }
     }
 
     /**
      * Updates camera position.
      */
-    updateCamera() {
+    moveCameraWithCharacter() {
         this.world.camera_x = -this.x + 100;
     }
 
     /**
-     * Starts the animation loop.
+     * Chooses current animation.
      */
-    startAnimation() {
-        setInterval(() => {
-            this.playCurrentAnimation();
-        }, 80);
+    updateCharacterAnimation() {
+        if (!this.world || this.world.gameOver) return;
+
+        if (this.isDead()) {
+            this.playAnimation(this.deadImages);
+            return;
+        }
+
+        if (this.isHurt()) {
+            this.playAnimation(this.hurtImages);
+            return;
+        }
+
+        if (this.isAboveGround()) {
+            this.playAnimation(this.jumpingImages);
+            return;
+        }
+
+        if (this.isWalkingOrKnocked()) {
+            this.playAnimation(this.walkingImages);
+            return;
+        }
+
+        this.playIdleAnimation();
     }
 
     /**
-     * Chooses the correct animation.
+     * Plays idle or long idle animation.
      */
-    playCurrentAnimation() {
-        if (this.isDead()) {
-            this.playAnimation(this.IMAGES_DEAD);
-        } else if (this.isHurt()) {
-            this.playAnimation(this.IMAGES_HURT);
-        } else if (this.isAboveGround()) {
-            this.playAnimation(this.IMAGES_JUMPING);
-        } else if (this.isMoving()) {
-            this.playAnimation(this.IMAGES_WALKING);
+    playIdleAnimation() {
+        if (this.idleCounter < 30) {
+            this.playAnimation(this.idleImages);
+            this.idleCounter++;
         } else {
-            this.playAnimation(this.IMAGES_IDLE);
+            this.playAnimation(this.longIdleImages);
         }
     }
 
     /**
-     * Checks if the character is walking.
+     * Checks if character is walking or pushed back.
      * @returns {boolean}
      */
-    isMoving() {
-        if (!this.world) return false;
+    isWalkingOrKnocked() {
+        return this.world.keyboard.LEFT ||
+            this.world.keyboard.RIGHT ||
+            this.isKnockedBack;
+    }
 
-        return this.world.keyboard.RIGHT || this.world.keyboard.LEFT;
+    /**
+     * Resets idle timer.
+     */
+    resetIdleCounter() {
+        this.idleCounter = 0;
+    }
+
+    /**
+     * Plays walking sound if allowed.
+     */
+    playWalkAudio() {
+        if (!this.walkAudio.paused) return;
+
+        this.walkAudio.play().catch(() => {});
+    }
+
+    /**
+     * Stops walking sound.
+     */
+    pauseWalkAudio() {
+        this.walkAudio.pause();
+        this.walkAudio.currentTime = 0;
+    }
+
+    /**
+     * Pushes the character backwards for a short moment.
+     * @param {number} distance Push distance.
+     * @param {number} jumpPower Upward force.
+     * @param {number} steps Amount of small movement steps.
+     */
+    startKnockback(distance = 120, jumpPower = 26, steps = 12) {
+        this.stopKnockback();
+        this.isKnockedBack = true;
+        this.speedY = jumpPower;
+
+        const stepDistance = distance / steps;
+        let doneSteps = 0;
+
+        this.knockbackTimer = setInterval(() => {
+            this.x = Math.max(0, this.x - stepDistance);
+            doneSteps++;
+
+            if (doneSteps >= steps) {
+                this.stopKnockback();
+            }
+        }, 1000 / 60);
+    }
+
+    /**
+     * Stops current knockback.
+     */
+    stopKnockback() {
+        if (this.knockbackTimer) {
+            clearInterval(this.knockbackTimer);
+            this.knockbackTimer = null;
+        }
+
+        this.isKnockedBack = false;
     }
 }
