@@ -1,152 +1,270 @@
 let canvas;
+let ctx;
 let world;
 let keyboard = new Keyboard();
 
+let canvasView;
+let mobileControls;
+
 let isGameRunning = false;
+let isGameFinished = false;
 let audioMuted = false;
 
-const mobileControls = {
-    toggleFullscreen() {
-        const root = document.getElementById("desertGameRoot");
+const INPUT_MAP = new Map([
+    [37, "LEFT"],
+    [39, "RIGHT"],
+    [38, "UP"],
+    [40, "DOWN"],
+    [32, "SPACE"],
+    [68, "D"]
+]);
 
-        if (!document.fullscreenElement && root?.requestFullscreen) {
-            root.requestFullscreen();
-        } else if (document.exitFullscreen) {
-            document.exitFullscreen();
-        }
-    }
+const END_IMAGES = {
+    success: "./assets/img/You won, you lost/You Win A.png",
+    crash: "./assets/img/You won, you lost/Game Over.png",
+    fail: "./assets/img/You won, you lost/You lost.png"
 };
 
+const LOST_SCREEN_DELAY = 1350;
+
 /**
- * Initializes the game.
+ * Starts all page setup steps.
+ * @returns {void}
  */
 function init() {
+    insertPageTemplates();
+    collectPageParts();
+    createCanvasHelpers();
+    createTouchHelpers();
+    connectPageEvents();
+    openStartScene();
+}
+
+/**
+ * Inserts HTML templates into the page.
+ * @returns {void}
+ */
+function insertPageTemplates() {
     mountTemplates();
+}
+
+/**
+ * Caches UI and canvas elements.
+ * @returns {void}
+ */
+function collectPageParts() {
     cacheUiElements();
-    bindGameButtons();
-    bindKeyboardEvents();
-    showStartView();
 
-    startGame(); // nur zum Test
-}
-
-/**
- * Connects buttons with game actions.
- */
-function bindGameButtons() {
-    if (startGameButton) {
-        startGameButton.addEventListener("click", startGame);
-    }
-
-    if (playAgainButton) {
-        playAgainButton.addEventListener("click", restartRoundDirectly);
-    }
-}
-
-/**
- * Starts the game world.
- */
-function startGame() {
-    canvas = document.getElementById("canvas");
+    canvas = getElement("canvas");
 
     if (!canvas) {
-        console.error("Canvas element was not found.");
+        console.error("Game canvas could not be found.");
         return;
     }
 
-    resetKeyboardState();
+    ctx = canvas.getContext("2d");
+}
+
+/**
+ * Gets one element by id.
+ * @param {string} id Element id.
+ * @returns {HTMLElement|null} The found element.
+ */
+function getElement(id) {
+    return document.getElementById(id);
+}
+
+/**
+ * Creates canvas screen helper.
+ * @returns {void}
+ */
+function createCanvasHelpers() {
+    if (!canvas) return;
+
+    canvasView = new CanvasView(canvas);
+}
+
+/**
+ * Creates touch input helper.
+ * @returns {void}
+ */
+function createTouchHelpers() {
+    mobileControls = new TouchControl(keyboard, clearInputs);
+    mobileControls.init();
+}
+
+/**
+ * Connects all UI and window events.
+ * @returns {void}
+ */
+function connectPageEvents() {
+    connectClick(startGameButton, beginRound);
+    connectClick(playAgainButton, restartRoundDirectly);
+
+    window.addEventListener("keydown", event => setInputByEvent(event, true));
+    window.addEventListener("keyup", event => setInputByEvent(event, false));
+    window.addEventListener("resize", refreshScreenHelpers);
+    window.addEventListener("orientationchange", refreshScreenHelpers);
+    window.addEventListener("keydown", handleDialogEscape);
+}
+
+/**
+ * Adds click event to an element.
+ * @param {HTMLElement|null} element Target element.
+ * @param {Function} action Click action.
+ * @returns {void}
+ */
+function connectClick(element, action) {
+    if (element) element.addEventListener("click", action);
+}
+
+/**
+ * Shows the start image and start buttons.
+ * @returns {void}
+ */
+function openStartScene() {
+    closeRunningWorld();
+    clearInputs();
+
+    isGameRunning = false;
+    isGameFinished = false;
+
+    refreshGameUi();
+
+    if (canvasView) canvasView.showStart();
+}
+
+/**
+ * Starts a new playable round.
+ * @returns {void}
+ */
+function beginRound() {
+    closeRunningWorld();
+    clearInputs();
+
     isGameRunning = true;
-    showGameView();
+    isGameFinished = false;
+
+    refreshGameUi();
 
     world = new World(canvas, keyboard);
-
-    console.log("World created:", world);
-    console.log("Character:", world.character);
-    console.log("Enemies:", world.level.enemies);
 }
 
 /**
  * Restarts the current round.
+ * @returns {void}
  */
 function restartRoundDirectly() {
-    returnToStartScreen();
-    startGame();
+    beginRound();
 }
 
 /**
- * Returns to the start screen.
+ * Returns from game view back to the start scene.
+ * @returns {void}
  */
 function returnToStartScreen() {
-    if (world) {
-        world.gameOver = true;
-        world = null;
-    }
-
-    isGameRunning = false;
-    resetKeyboardState();
-    clearCanvas();
-    showStartView();
+    openStartScene();
 }
 
 /**
- * Clears the canvas.
+ * Stops the active world.
+ * @returns {void}
  */
-function clearCanvas() {
-    if (!canvas) canvas = document.getElementById("canvas");
-    if (!canvas) return;
+function closeRunningWorld() {
+    if (!world) return;
 
-    const ctx = canvas.getContext("2d");
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    world.gameOver = true;
+    world = null;
 }
 
 /**
- * Toggles the audio state.
+ * Updates keyboard state from a keyboard event.
+ * @param {KeyboardEvent} event Keyboard event.
+ * @param {boolean} active True if the key is active.
+ * @returns {void}
+ */
+function setInputByEvent(event, active) {
+    const inputName = INPUT_MAP.get(event.keyCode);
+
+    if (inputName) keyboard[inputName] = active;
+}
+
+/**
+ * Resets all stored input states.
+ * @returns {void}
+ */
+function clearInputs() {
+    INPUT_MAP.forEach(inputName => {
+        keyboard[inputName] = false;
+    });
+}
+
+/**
+ * Refreshes mobile and fullscreen helpers.
+ * @returns {void}
+ */
+function refreshScreenHelpers() {
+    if (!mobileControls) return;
+
+    mobileControls.updateTouchClass();
+    mobileControls.updateRotateDialog();
+}
+
+/**
+ * Toggles sound UI state.
+ * @returns {void}
  */
 function switchAudioMode() {
     audioMuted = !audioMuted;
-    toggleSoundLine("soundLineDesktop");
-    toggleSoundLine("soundLineCompact");
+    updateSoundUi(audioMuted);
 }
 
 /**
- * Shows or hides one sound line.
- * @param {string} id Element id.
+ * Shows the success screen.
+ * @returns {void}
  */
-function toggleSoundLine(id) {
-    const line = document.getElementById(id);
-    if (line) line.classList.toggle("sound-line-hidden", !audioMuted);
+function showWinScreen() {
+    endRoundWithImage(END_IMAGES.success);
 }
 
 /**
- * Binds keyboard events.
+ * Shows game over first and then lost image.
+ * @returns {void}
  */
-function bindKeyboardEvents() {
-    window.addEventListener("keydown", (event) => updateKeyboard(event, true));
-    window.addEventListener("keyup", (event) => updateKeyboard(event, false));
+function showGameOverScreen() {
+    endRoundWithImage(END_IMAGES.crash, END_IMAGES.fail);
 }
 
 /**
- * Updates keyboard state.
- * @param {KeyboardEvent} event Keyboard event.
- * @param {boolean} pressed True if pressed.
+ * Shows the lost screen directly.
+ * @returns {void}
  */
-function updateKeyboard(event, pressed) {
-    if (event.keyCode === 39) keyboard.RIGHT = pressed;
-    if (event.keyCode === 37) keyboard.LEFT = pressed;
-    if (event.keyCode === 38) keyboard.UP = pressed;
-    if (event.keyCode === 40) keyboard.DOWN = pressed;
-    if (event.keyCode === 32) keyboard.SPACE = pressed;
-    if (event.keyCode === 68) keyboard.D = pressed;
+function showNoBottlesScreen() {
+    endRoundWithImage(END_IMAGES.fail);
 }
 
 /**
- * Resets all keyboard states.
+ * Ends the game and draws result screens.
+ * @param {string} mainImage First result image.
+ * @param {string|null} followUpImage Optional second image.
+ * @returns {void}
  */
-function resetKeyboardState() {
-    keyboard.RIGHT = false;
-    keyboard.LEFT = false;
-    keyboard.UP = false;
-    keyboard.DOWN = false;
-    keyboard.SPACE = false;
-    keyboard.D = false;
+function endRoundWithImage(mainImage, followUpImage = null) {
+    isGameRunning = false;
+    isGameFinished = true;
+    clearInputs();
+
+    if (world) world.gameOver = true;
+
+    refreshGameUi();
+
+    if (!canvasView) return;
+
+    canvasView.showResult(mainImage);
+
+    if (followUpImage) {
+        setTimeout(() => {
+            canvasView.showResult(followUpImage);
+        }, LOST_SCREEN_DELAY);
+    }
 }

@@ -1,98 +1,246 @@
 let gameToolbar;
 let startGameButton;
 let playAgainButton;
+let restartToolbarButton;
 
 /**
- * Mounts the template parts into the page.
+ * Mounts all UI templates into the current HTML containers.
+ * @returns {void}
  */
 function mountTemplates() {
-    setTemplate("gameHeaderMount", getTopBarTemplate);
-    setTemplate("gameIntroMount", getStartButtonTemplate);
-    setTemplate("gameFooterMount", getBottomButtonsTemplate);
+    placeTemplate("gameHeaderMount", getTopBarTemplate);
+    placeTemplate("gameIntroMount", getStartButtonTemplate);
+    placeTemplate("gameFooterMount", getBottomButtonsTemplate);
 }
 
 /**
- * Inserts one template into one element.
- * @param {string} id Target element id.
- * @param {Function} templateFn Template function.
+ * Inserts one template into one target element.
+ * @param {string} targetId Target element id.
+ * @param {Function} templateBuilder Function that returns HTML.
+ * @returns {void}
  */
-function setTemplate(id, templateFn) {
-    const element = document.getElementById(id);
-    if (element) element.innerHTML = templateFn();
+function placeTemplate(targetId, templateBuilder) {
+    const target = document.getElementById(targetId);
+
+    if (!target || typeof templateBuilder !== "function") return;
+
+    target.innerHTML = templateBuilder();
 }
 
 /**
- * Saves important UI elements.
+ * Stores frequently used UI elements.
+ * @returns {void}
  */
 function cacheUiElements() {
     gameToolbar = document.getElementById("gameToolbar");
     startGameButton = document.getElementById("startGameButton");
     playAgainButton = document.getElementById("playAgainButton");
+    restartToolbarButton = document.getElementById("restartToolbarButton");
 }
 
 /**
- * Shows the start view.
+ * Updates the body mode classes.
+ * @returns {void}
+ */
+function updateViewMode() {
+    document.body.classList.remove("start-screen-mode", "game-running-mode", "game-over-mode");
+
+    if (isGameFinished) {
+        document.body.classList.add("game-over-mode");
+        return;
+    }
+
+    if (isGameRunning) {
+        document.body.classList.add("game-running-mode");
+        return;
+    }
+
+    document.body.classList.add("start-screen-mode");
+}
+
+/**
+ * Refreshes all visible UI parts based on the game state.
+ * @returns {void}
+ */
+function refreshGameUi() {
+    updateViewMode();
+
+    const showStartControls = !isGameRunning && !isGameFinished;
+    const showRestartControls = isGameFinished;
+
+    setElementDisplay("launchPanel", showStartControls || showRestartControls, "flex");
+    setElementDisplay("footerActionRow", showStartControls, "flex");
+
+    if (startGameButton) startGameButton.style.display = showStartControls ? "flex" : "none";
+    if (playAgainButton) playAgainButton.style.display = showRestartControls ? "flex" : "none";
+    if (restartToolbarButton) restartToolbarButton.style.display = isGameRunning ? "flex" : "none";
+}
+
+/**
+ * Shows or hides one element.
+ * @param {string} elementId Element id.
+ * @param {boolean} visible True if visible.
+ * @param {string} displayStyle CSS display value.
+ * @returns {void}
+ */
+function setElementDisplay(elementId, visible, displayStyle = "block") {
+    const element = document.getElementById(elementId);
+
+    if (element) element.style.display = visible ? displayStyle : "none";
+}
+
+/**
+ * Shows the start UI.
+ * @returns {void}
  */
 function showStartView() {
-    document.body.classList.add("start-screen-mode");
-    document.body.classList.remove("game-running-mode", "game-over-mode");
-
-    toggleElement("launchPanel", true, "flex");
-    toggleElement("footerActionRow", true, "flex");
-
-    if (startGameButton) startGameButton.style.display = "flex";
-    if (playAgainButton) playAgainButton.style.display = "none";
+    isGameRunning = false;
+    isGameFinished = false;
+    refreshGameUi();
 }
 
 /**
- * Shows the running game view.
+ * Shows the running-game UI.
+ * @returns {void}
  */
 function showGameView() {
-    document.body.classList.remove("start-screen-mode", "game-over-mode");
-    document.body.classList.add("game-running-mode");
-
-    toggleElement("launchPanel", false);
-    toggleElement("footerActionRow", false);
+    isGameRunning = true;
+    isGameFinished = false;
+    refreshGameUi();
 }
 
 /**
- * Shows or hides an element.
- * @param {string} id Element id.
- * @param {boolean} visible Visibility state.
- * @param {string} displayValue Display value.
+ * Shows the finished-game UI.
+ * @returns {void}
  */
-function toggleElement(id, visible, displayValue = "block") {
-    const element = document.getElementById(id);
-    if (element) element.style.display = visible ? displayValue : "none";
+function showFinishedView() {
+    isGameRunning = false;
+    isGameFinished = true;
+    refreshGameUi();
 }
 
 /**
- * Opens one dialog.
- * @param {string} id Dialog id.
+ * Opens a dialog and pauses the world if needed.
+ * @param {string} dialogId Dialog id.
+ * @returns {void}
  */
-function openDialog(id) {
-    const dialog = document.getElementById(id);
+function openDialog(dialogId) {
+    const dialog = document.getElementById(dialogId);
+
     if (!dialog) return;
 
-    dialog.classList.remove("dialog-hidden");
-    document.body.classList.add("overlay-open");
+    dialog.classList.remove("dialog-closed");
+    document.body.classList.add("dialog-open");
+    pauseWorldForDialog();
 }
 
 /**
- * Opens one dialog from the menu.
- * @param {string} id Dialog id.
+ * Opens a dialog from a compact menu button.
+ * @param {string} dialogId Dialog id.
+ * @returns {void}
  */
-function openDialogFromMenu(id) {
-    openDialog(id);
+function openDialogFromMenu(dialogId) {
+    openDialog(dialogId);
 }
 
 /**
- * Closes one dialog.
- * @param {string} id Dialog id.
+ * Closes one dialog and resumes the world if possible.
+ * @param {string} dialogId Dialog id.
+ * @returns {void}
  */
-function closeDialog(id) {
-    const dialog = document.getElementById(id);
-    if (dialog) dialog.classList.add("dialog-hidden");
+function closeDialog(dialogId) {
+    const dialog = document.getElementById(dialogId);
 
-    document.body.classList.remove("overlay-open");
+    if (dialog) dialog.classList.add("dialog-closed");
+
+    updateOverlayState();
+    resumeWorldAfterDialog();
+}
+
+/**
+ * Closes all open dialogs.
+ * @returns {void}
+ */
+function closeAllDialogs() {
+    ["imprintDialog", "instructionDialog"].forEach((dialogId) => {
+        const dialog = document.getElementById(dialogId);
+        if (dialog) dialog.classList.add("dialog-closed");
+    });
+
+    updateOverlayState();
+    resumeWorldAfterDialog();
+}
+
+/**
+ * Handles Escape key for dialogs.
+ * @param {KeyboardEvent} event Keyboard event.
+ * @returns {void}
+ */
+function handleDialogEscape(event) {
+    if (event.key === "Escape") closeAllDialogs();
+}
+
+/**
+ * Checks if at least one dialog is open.
+ * @returns {boolean} True if a dialog is open.
+ */
+function hasOpenDialog() {
+    return ["imprintDialog", "instructionDialog"].some((dialogId) => {
+        const dialog = document.getElementById(dialogId);
+        return dialog && !dialog.classList.contains("dialog-closed");
+    });
+}
+
+/**
+ * Updates body overlay class.
+ * @returns {void}
+ */
+function updateOverlayState() {
+    document.body.classList.toggle("dialog-open", hasOpenDialog());
+}
+
+/**
+ * Pauses the world while a dialog is open.
+ * @returns {void}
+ */
+function pauseWorldForDialog() {
+    if (!world || !isGameRunning) return;
+
+    world.paused = true;
+
+    if (typeof resetKeyboardState === "function") {
+        resetKeyboardState();
+    }
+}
+
+/**
+ * Resumes the world after dialogs are closed.
+ * @returns {void}
+ */
+function resumeWorldAfterDialog() {
+    if (!world || !isGameRunning || hasOpenDialog()) return;
+
+    world.paused = false;
+}
+
+/**
+ * Updates the mute slash visibility.
+ * @param {string} lineId Element id.
+ * @param {boolean} muted True if muted.
+ * @returns {void}
+ */
+function updateSoundLine(lineId, muted) {
+    const line = document.getElementById(lineId);
+
+    if (line) line.classList.toggle("sound-line-hidden", !muted);
+}
+
+/**
+ * Updates all sound icons.
+ * @param {boolean} muted True if muted.
+ * @returns {void}
+ */
+function updateSoundUi(muted) {
+    updateSoundLine("soundLineDesktop", muted);
+    updateSoundLine("soundLineCompact", muted);
 }
