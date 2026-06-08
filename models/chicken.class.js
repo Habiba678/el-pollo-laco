@@ -1,13 +1,12 @@
 /**
- * Represents a normal chicken enemy that walks through the level
- * and can switch into a defeated state.
+ * Represents a normal chicken enemy that moves through the level.
  */
 class Chicken extends MovableObject {
-    x = 450;
+    x = 850 + Math.random() * 650;
     y = 350;
     width = 120;
     height = 80;
-    speed = 0.15 + Math.random() * 0.35;
+    speed = 0.18 + Math.random() * 0.32;
     isDefeated = false;
 
     offset = {
@@ -26,7 +25,8 @@ class Chicken extends MovableObject {
     defeatImage = "./assets/img/3_enemies_chicken/chicken_normal/2_dead/dead.png";
 
     /**
-     * Creates the chicken, loads its images and starts movement.
+     * Creates a normal chicken and starts its behavior.
+     * @returns {void}
      */
     constructor() {
         super();
@@ -34,40 +34,38 @@ class Chicken extends MovableObject {
         this.loadImages(this.walkingImages);
         this.loadImages([this.defeatImage]);
         this.applyGravity();
-        this.startLoops();
+        this.startBehavior();
     }
 
     /**
      * Starts movement and animation loops.
      * @returns {void}
      */
-    startLoops() {
-        setInterval(() => this.moveChicken(), 1000 / 60);
-        setInterval(() => this.animateChicken(), 200);
+    startBehavior() {
+        setInterval(() => this.moveEnemy(), 1000 / 60);
+        setInterval(() => this.playWalkCycle(), 210);
     }
 
     /**
-     * Moves the chicken to the left while it is alive.
+     * Moves the chicken while it is active.
      * @returns {void}
      */
-    moveChicken() {
+    moveEnemy() {
         if (this.isDefeated) return;
-
         this.moveLeft();
     }
 
     /**
-     * Plays the walking animation while the chicken is alive.
+     * Plays the walking animation while active.
      * @returns {void}
      */
-    animateChicken() {
+    playWalkCycle() {
         if (this.isDefeated) return;
-
         this.playAnimation(this.walkingImages);
     }
 
     /**
-     * Changes the chicken into its defeated state.
+     * Switches the chicken into defeated state.
      * @returns {void}
      */
     defeat() {
@@ -77,7 +75,7 @@ class Chicken extends MovableObject {
     }
 
     /**
-     * Keeps compatibility with older code that calls kill().
+     * Keeps support for kill calls.
      * @returns {void}
      */
     kill() {
@@ -85,7 +83,15 @@ class Chicken extends MovableObject {
     }
 
     /**
-     * Checks whether the chicken is defeated.
+     * Keeps support for die calls.
+     * @returns {void}
+     */
+    die() {
+        this.defeat();
+    }
+
+    /**
+     * Checks if this chicken is already defeated.
      * @returns {boolean} True if the chicken is defeated.
      */
     isDead() {
