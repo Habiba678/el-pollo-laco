@@ -1,17 +1,18 @@
 /**
- * Enemy chicken that walks through the level and can be defeated.
+ * Represents a normal chicken enemy that walks through the level
+ * and can switch into a defeated state.
  */
 class Chicken extends MovableObject {
-    x = 1000 + Math.random() * 500;
-    y = 360;
+    x = 450;
+    y = 350;
     width = 120;
-    height = 70;
-    speed = 0.2 + Math.random() * 0.45;
+    height = 80;
+    speed = 0.15 + Math.random() * 0.35;
     isDefeated = false;
 
     offset = {
-        top: 8,
-        bottom: 8,
+        top: 6,
+        bottom: 6,
         left: 10,
         right: 10
     };
@@ -24,44 +25,70 @@ class Chicken extends MovableObject {
 
     defeatImage = "./assets/img/3_enemies_chicken/chicken_normal/2_dead/dead.png";
 
+    /**
+     * Creates the chicken, loads its images and starts movement.
+     */
     constructor() {
         super();
         this.loadImage(this.walkingImages[0]);
         this.loadImages(this.walkingImages);
         this.loadImages([this.defeatImage]);
         this.applyGravity();
-        this.startChickenMovement();
-        this.startChickenAnimation();
+        this.startLoops();
     }
 
     /**
-     * Moves the chicken to the left while it is active.
+     * Starts movement and animation loops.
+     * @returns {void}
      */
-    startChickenMovement() {
-        setInterval(() => {
-            if (!this.isDefeated) {
-                this.moveLeft();
-            }
-        }, 1000 / 60);
+    startLoops() {
+        setInterval(() => this.moveChicken(), 1000 / 60);
+        setInterval(() => this.animateChicken(), 200);
     }
 
     /**
-     * Plays the chicken walk animation while it is active.
+     * Moves the chicken to the left while it is alive.
+     * @returns {void}
      */
-    startChickenAnimation() {
-        setInterval(() => {
-            if (!this.isDefeated) {
-                this.playAnimation(this.walkingImages);
-            }
-        }, 200);
+    moveChicken() {
+        if (this.isDefeated) return;
+
+        this.moveLeft();
     }
 
     /**
-     * Stops the chicken and shows the defeated image.
+     * Plays the walking animation while the chicken is alive.
+     * @returns {void}
+     */
+    animateChicken() {
+        if (this.isDefeated) return;
+
+        this.playAnimation(this.walkingImages);
+    }
+
+    /**
+     * Changes the chicken into its defeated state.
+     * @returns {void}
      */
     defeat() {
         this.isDefeated = true;
         this.speed = 0;
         this.img = this.imageCache[this.defeatImage];
+    }
+
+    /**
+     * Keeps compatibility with older code that calls kill().
+     * @returns {void}
+     */
+    kill() {
+        this.defeat();
+    }
+
+    /**
+     * Checks whether the chicken is defeated.
+     * @returns {boolean} True if the chicken is defeated.
+     */
+    isDead() {
+        return this.isDefeated;
     }
 }

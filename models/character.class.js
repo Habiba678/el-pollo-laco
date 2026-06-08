@@ -6,6 +6,7 @@ class Character extends MovableObject {
     width = 100;
     height = 250;
     speed = 10;
+    groundY = 165;
 
     offset = {
         top: 60,
@@ -77,6 +78,7 @@ class Character extends MovableObject {
 
     walkAudio = new Audio("./assets/audio/run.mp3");
     idleCounter = 0;
+    jumpFrame = 0;
     knockbackTimer = null;
     isKnockedBack = false;
 
@@ -86,11 +88,11 @@ class Character extends MovableObject {
         this.loadCharacterImages();
         this.walkAudio.volume = 0.2;
         this.applyGravity();
-        this.startCharacterLoops();
+        this.startLoops();
     }
 
     /**
-     * Loads every animation group of the character.
+     * Loads all character sprite groups.
      */
     loadCharacterImages() {
         this.loadImages(this.idleImages);
@@ -102,186 +104,188 @@ class Character extends MovableObject {
     }
 
     /**
-     * Starts movement and animation intervals.
+     * Starts movement and animation loops.
      */
-    startCharacterLoops() {
-        setInterval(() => this.updateCharacterMovement(), 1000 / 60);
-        setInterval(() => this.updateCharacterAnimation(), 80);
+    startLoops() {
+        setInterval(() => this.updateMovement(), 1000 / 60);
+        setInterval(() => this.updateAnimation(), 80);
     }
 
     /**
-     * Updates movement, jump and camera.
+     * Updates keyboard movement and camera.
      */
-    updateCharacterMovement() {
+    updateMovement() {
         if (!this.world || this.world.gameOver) return;
 
-        this.pauseWalkAudio();
-        this.moveCharacterSideways();
-        this.handleCharacterJump();
-        this.moveCameraWithCharacter();
-    }
-
-    /**
-     * Moves character left or right.
-     */
-    moveCharacterSideways() {
-        if (this.isKnockedBack) return;
-
-        if (this.canWalkRight()) {
-            this.moveRight();
-            this.otherDirection = false;
-            this.playWalkAudio();
-            this.resetIdleCounter();
-        }
-
-        if (this.canWalkLeft()) {
-            this.moveLeft();
-            this.otherDirection = true;
-            this.playWalkAudio();
-            this.resetIdleCounter();
-        }
-    }
-
-    /**
-     * Checks if character may move right.
-     * @returns {boolean}
-     */
-    canWalkRight() {
-        return this.world.keyboard.RIGHT &&
-            this.x < this.world.level.level_end_x &&
-            !this.isBlockedByBoss();
-    }
-
-    /**
-     * Checks if character may move left.
-     * @returns {boolean}
-     */
-    canWalkLeft() {
-        return this.world.keyboard.LEFT && this.x > 0;
-    }
-
-    /**
-     * Blocks walking into the boss body.
-     * @returns {boolean}
-     */
-    isBlockedByBoss() {
-        const boss = this.world?.endbossManager?.endboss;
-
-        if (!boss || boss.isDead()) return false;
-
-        const characterRight = this.getRightSide();
-        const bossLeft = boss.getLeftSide ? boss.getLeftSide() : boss.x;
-
-        const characterBottom = this.getBottomSide();
-        const characterTop = this.getTopSide();
-        const bossTop = boss.getTopSide ? boss.getTopSide() : boss.y;
-        const bossBottom = boss.getBottomSide ? boss.getBottomSide() : boss.y + boss.height;
-
-        const touchesVerticalArea = characterBottom > bossTop && characterTop < bossBottom;
-        const reachesBoss = characterRight + this.speed >= bossLeft && this.x < boss.x;
-
-        return touchesVerticalArea && reachesBoss;
-    }
-
-    /**
-     * Handles jump input.
-     */
-    handleCharacterJump() {
-        if (this.isKnockedBack) return;
-
-        if (this.world.keyboard.SPACE && !this.isAboveGround()) {
-            this.jump();
-            this.resetIdleCounter();
-        }
-    }
-
-    /**
-     * Updates camera position.
-     */
-    moveCameraWithCharacter() {
+        this.stopWalkAudio();
+        this.moveByInput();
+        this.jumpByInput();
         this.world.camera_x = -this.x + 100;
     }
 
     /**
-     * Chooses current animation.
+     * Moves the character left or right.
      */
-    updateCharacterAnimation() {
+    moveByInput() {
+        if (this.isKnockedBack) return;
+
+        if (this.canMoveRight()) {
+            this.moveRight();
+            this.otherDirection = false;
+            this.playWalkAudio();
+            this.resetIdle();
+        }
+
+        if (this.canMoveLeft()) {
+            this.moveLeft();
+            this.otherDirection = true;
+            this.playWalkAudio();
+            this.resetIdle();
+        }
+    }
+
+    /**
+     * Checks right movement.
+     * @returns {boolean}
+     */
+    canMoveRight() {
+        const levelEnd = this.world?.level?.level_end_x || 2200;
+        return this.world.keyboard.RIGHT && this.x < levelEnd && !this.isBossBlocking();
+    }
+
+    /**
+     * Checks left movement.
+     * @returns {boolean}
+     */
+    canMoveLeft() {
+        return this.world.keyboard.LEFT && this.x > 0;
+    }
+
+    /**
+     * Checks jump input.
+     */
+    jumpByInput() {
+        if (this.isKnockedBack) return;
+
+        if (this.world.keyboard.SPACE && !this.isAboveGround()) {
+            this.jump();
+            this.resetIdle();
+            this.jumpFrame = 0;
+        }
+    }
+
+    /**
+     * Checks whether the character is above ground.
+     * @returns {boolean}
+     */
+    isAboveGround() {
+        return this.y < this.groundY;
+    }
+
+    /**
+     * Starts a jump.
+     */
+    jump() {
+        this.speedY = 30;
+    }
+
+    /**
+     * Checks if the boss blocks the way.
+     * @returns {boolean}
+     */
+    isBossBlocking() {
+        const boss = this.world?.endbossManager?.endboss;
+        if (!boss || typeof boss.isDead !== "function" || boss.isDead()) return false;
+
+        const characterRight = this.x + this.width - this.offset.right;
+        const bossLeft = boss.x + (boss.offset?.left || 0);
+
+        const characterTop = this.y + this.offset.top;
+        const characterBottom = this.y + this.height - this.offset.bottom;
+        const bossTop = boss.y + (boss.offset?.top || 0);
+        const bossBottom = boss.y + boss.height - (boss.offset?.bottom || 0);
+
+        return characterRight + this.speed >= bossLeft &&
+            this.x < boss.x &&
+            characterBottom > bossTop &&
+            characterTop < bossBottom;
+    }
+
+    /**
+     * Updates the current animation.
+     */
+    updateAnimation() {
         if (!this.world || this.world.gameOver) return;
 
-        if (this.isDead()) {
-            this.playAnimation(this.deadImages);
-            return;
-        }
-
-        if (this.isHurt()) {
-            this.playAnimation(this.hurtImages);
-            return;
-        }
-
-        if (this.isAboveGround()) {
-            this.playAnimation(this.jumpingImages);
-            return;
-        }
-
-        if (this.isWalkingOrKnocked()) {
-            this.playAnimation(this.walkingImages);
-            return;
-        }
+        if (this.isDead()) return this.playAnimation(this.deadImages);
+        if (this.isHurt()) return this.playAnimation(this.hurtImages);
+        if (this.isAboveGround()) return this.playJumpAnimation();
+        if (this.isMoving()) return this.playAnimation(this.walkingImages);
 
         this.playIdleAnimation();
     }
 
     /**
-     * Plays idle or long idle animation.
+     * Plays the jump animation step by step.
+     */
+    playJumpAnimation() {
+        const index = Math.min(this.jumpFrame, this.jumpingImages.length - 1);
+        this.img = this.imageCache[this.jumpingImages[index]];
+
+        if (this.jumpFrame < this.jumpingImages.length - 1) {
+            this.jumpFrame++;
+        }
+    }
+
+    /**
+     * Plays idle and long idle animation.
      */
     playIdleAnimation() {
         if (this.idleCounter < 30) {
             this.playAnimation(this.idleImages);
             this.idleCounter++;
-        } else {
-            this.playAnimation(this.longIdleImages);
+            return;
         }
+
+        this.playAnimation(this.longIdleImages);
     }
 
     /**
-     * Checks if character is walking or pushed back.
+     * Checks if character is moving.
      * @returns {boolean}
      */
-    isWalkingOrKnocked() {
-        return this.world.keyboard.LEFT ||
-            this.world.keyboard.RIGHT ||
-            this.isKnockedBack;
+    isMoving() {
+        return this.world.keyboard.LEFT || this.world.keyboard.RIGHT || this.isKnockedBack;
     }
 
     /**
      * Resets idle timer.
      */
-    resetIdleCounter() {
+    resetIdle() {
         this.idleCounter = 0;
     }
 
     /**
-     * Plays walking sound if allowed.
+     * Plays walking audio safely.
      */
     playWalkAudio() {
         if (!this.walkAudio.paused) return;
-
         this.walkAudio.play().catch(() => {});
     }
 
     /**
-     * Stops walking sound.
+     * Stops walking audio.
      */
-    pauseWalkAudio() {
+    stopWalkAudio() {
         this.walkAudio.pause();
         this.walkAudio.currentTime = 0;
     }
 
     /**
-     * Pushes the character backwards for a short moment.
+     * Pushes the character backwards.
      * @param {number} distance Push distance.
      * @param {number} jumpPower Upward force.
-     * @param {number} steps Amount of small movement steps.
+     * @param {number} steps Amount of steps.
      */
     startKnockback(distance = 120, jumpPower = 26, steps = 12) {
         this.stopKnockback();
@@ -289,20 +293,20 @@ class Character extends MovableObject {
         this.speedY = jumpPower;
 
         const stepDistance = distance / steps;
-        let doneSteps = 0;
+        let currentStep = 0;
 
         this.knockbackTimer = setInterval(() => {
             this.x = Math.max(0, this.x - stepDistance);
-            doneSteps++;
+            currentStep++;
 
-            if (doneSteps >= steps) {
+            if (currentStep >= steps) {
                 this.stopKnockback();
             }
         }, 1000 / 60);
     }
 
     /**
-     * Stops current knockback.
+     * Stops knockback movement.
      */
     stopKnockback() {
         if (this.knockbackTimer) {

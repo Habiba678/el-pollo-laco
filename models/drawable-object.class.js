@@ -21,23 +21,22 @@ class DrawableObject {
      * @param {CanvasRenderingContext2D} ctx Canvas rendering context.
      */
     draw(ctx) {
-        if (!this.img) return;
-
-        ctx.drawImage(this.img, this.x, this.y, this.width, this.height);
-    }
-
-    /**
-     * Draws a debug frame around selected objects.
-     * @param {CanvasRenderingContext2D} ctx Canvas rendering context.
-     */
-    drawFrame(ctx) {
-        if (this instanceof Character || this instanceof Chicken) {
-            ctx.beginPath();
-            ctx.lineWidth = "5";
-            ctx.strokeStyle = "blue";
-            ctx.rect(this.x, this.y, this.width, this.height);
-            ctx.stroke();
+        if (!this.img) {
+            console.log("No image available:", this);
+            return;
         }
+    
+        if (!this.img.complete) {
+            console.log("Image is still loading:", this.img.src);
+            return;
+        }
+    
+        if (this.img.naturalWidth === 0) {
+            console.log("Broken image path:", this.img.src, this);
+            return;
+        }
+    
+        ctx.drawImage(this.img, this.x, this.y, this.width, this.height);
     }
 
     /**
