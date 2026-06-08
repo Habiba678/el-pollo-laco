@@ -82,6 +82,9 @@ class Character extends MovableObject {
     knockbackTimer = null;
     isKnockedBack = false;
 
+    /**
+     * Creates the character, loads images and starts movement logic.
+     */
     constructor() {
         super();
         this.loadImage(this.idleImages[0]);
@@ -92,7 +95,8 @@ class Character extends MovableObject {
     }
 
     /**
-     * Loads all character sprite groups.
+     * Loads all character image groups.
+     * @returns {void}
      */
     loadCharacterImages() {
         this.loadImages(this.idleImages);
@@ -104,7 +108,8 @@ class Character extends MovableObject {
     }
 
     /**
-     * Starts movement and animation loops.
+     * Starts movement and animation intervals.
+     * @returns {void}
      */
     startLoops() {
         setInterval(() => this.updateMovement(), 1000 / 60);
@@ -112,7 +117,8 @@ class Character extends MovableObject {
     }
 
     /**
-     * Updates keyboard movement and camera.
+     * Updates keyboard movement, jumping and camera.
+     * @returns {void}
      */
     updateMovement() {
         if (!this.world || this.world.gameOver) return;
@@ -124,7 +130,8 @@ class Character extends MovableObject {
     }
 
     /**
-     * Moves the character left or right.
+     * Moves the character based on keyboard input.
+     * @returns {void}
      */
     moveByInput() {
         if (this.isKnockedBack) return;
@@ -145,8 +152,8 @@ class Character extends MovableObject {
     }
 
     /**
-     * Checks right movement.
-     * @returns {boolean}
+     * Checks whether the character can move right.
+     * @returns {boolean} True if moving right is allowed.
      */
     canMoveRight() {
         const levelEnd = this.world?.level?.level_end_x || 2200;
@@ -154,15 +161,16 @@ class Character extends MovableObject {
     }
 
     /**
-     * Checks left movement.
-     * @returns {boolean}
+     * Checks whether the character can move left.
+     * @returns {boolean} True if moving left is allowed.
      */
     canMoveLeft() {
         return this.world.keyboard.LEFT && this.x > 0;
     }
 
     /**
-     * Checks jump input.
+     * Starts a jump if the jump key is pressed.
+     * @returns {void}
      */
     jumpByInput() {
         if (this.isKnockedBack) return;
@@ -176,22 +184,23 @@ class Character extends MovableObject {
 
     /**
      * Checks whether the character is above ground.
-     * @returns {boolean}
+     * @returns {boolean} True if character is in the air.
      */
     isAboveGround() {
         return this.y < this.groundY;
     }
 
     /**
-     * Starts a jump.
+     * Gives the character upward speed.
+     * @returns {void}
      */
     jump() {
         this.speedY = 30;
     }
 
     /**
-     * Checks if the boss blocks the way.
-     * @returns {boolean}
+     * Checks whether the endboss blocks the character.
+     * @returns {boolean} True if the boss blocks the way.
      */
     isBossBlocking() {
         const boss = this.world?.endbossManager?.endboss;
@@ -199,7 +208,6 @@ class Character extends MovableObject {
 
         const characterRight = this.x + this.width - this.offset.right;
         const bossLeft = boss.x + (boss.offset?.left || 0);
-
         const characterTop = this.y + this.offset.top;
         const characterBottom = this.y + this.height - this.offset.bottom;
         const bossTop = boss.y + (boss.offset?.top || 0);
@@ -212,7 +220,8 @@ class Character extends MovableObject {
     }
 
     /**
-     * Updates the current animation.
+     * Updates the currently visible character animation.
+     * @returns {void}
      */
     updateAnimation() {
         if (!this.world || this.world.gameOver) return;
@@ -226,7 +235,8 @@ class Character extends MovableObject {
     }
 
     /**
-     * Plays the jump animation step by step.
+     * Plays jump frames step by step.
+     * @returns {void}
      */
     playJumpAnimation() {
         const index = Math.min(this.jumpFrame, this.jumpingImages.length - 1);
@@ -238,7 +248,8 @@ class Character extends MovableObject {
     }
 
     /**
-     * Plays idle and long idle animation.
+     * Plays idle animation and switches to long idle later.
+     * @returns {void}
      */
     playIdleAnimation() {
         if (this.idleCounter < 30) {
@@ -251,30 +262,41 @@ class Character extends MovableObject {
     }
 
     /**
-     * Checks if character is moving.
-     * @returns {boolean}
+     * Checks whether the character is moving or knocked back.
+     * @returns {boolean} True if character is moving.
      */
     isMoving() {
         return this.world.keyboard.LEFT || this.world.keyboard.RIGHT || this.isKnockedBack;
     }
 
     /**
-     * Resets idle timer.
+     * Resets the idle counter.
+     * @returns {void}
      */
     resetIdle() {
         this.idleCounter = 0;
     }
 
     /**
-     * Plays walking audio safely.
+     * Plays walking sound if sound is allowed.
+     * @returns {void}
      */
     playWalkAudio() {
+        if (
+            this.world?.gameAudio &&
+            (this.world.gameAudio.audioMuted || this.world.gameAudio.soundLocked)
+        ) {
+            return;
+        }
+
         if (!this.walkAudio.paused) return;
+
         this.walkAudio.play().catch(() => {});
     }
 
     /**
-     * Stops walking audio.
+     * Stops walking sound.
+     * @returns {void}
      */
     stopWalkAudio() {
         this.walkAudio.pause();
@@ -286,6 +308,7 @@ class Character extends MovableObject {
      * @param {number} distance Push distance.
      * @param {number} jumpPower Upward force.
      * @param {number} steps Amount of steps.
+     * @returns {void}
      */
     startKnockback(distance = 120, jumpPower = 26, steps = 12) {
         this.stopKnockback();
@@ -306,7 +329,8 @@ class Character extends MovableObject {
     }
 
     /**
-     * Stops knockback movement.
+     * Stops active knockback movement.
+     * @returns {void}
      */
     stopKnockback() {
         if (this.knockbackTimer) {
