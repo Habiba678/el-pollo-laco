@@ -1,0 +1,259 @@
+@media only screen and (pointer: coarse) {
+  body {
+    min-height: 100vh;
+  }
+
+  .wide-screen-tools {
+    display: none !important;
+  }
+
+  .compact-layer,
+  .quick-tools-wrap {
+    display: flex;
+  }
+
+  .game-toolbar {
+    top: 14px;
+    height: 45px;
+    padding: 6px 26px;
+    border-radius: 14px;
+  }
+
+  .quick-tools-panel {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+  }
+
+  .quick-tool-button {
+    width: 34px;
+    height: 34px;
+  }
+
+  .quick-tool-button img {
+    width: 26px;
+    height: 26px;
+  }
+
+  .player-input-board {
+    bottom: 14px;
+    padding: 0 18px;
+  }
+
+  .input-round-button {
+    width: 38px;
+    height: 38px;
+  }
+
+  .input-symbol {
+    font-size: 22px;
+  }
+
+   
+.desert-game-root {
+  position: relative;
+  width: min(90vw, 720px, 100vh * (3 / 2));
+  max-height: 100vh;
+  aspect-ratio: 3 / 2;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 0;
+}
+
+.desert-canvas {
+  width: 100%;
+  height: 100%;
+  max-height: 100vh;
+  display: block;
+}
+
+
+
+
+}
+
+@media only screen and (max-width: 900px) {
+  .game-toolbar {
+    height: 45px;
+    padding: 6px 28px;
+    border-radius: 14px;
+  }
+
+  .toolbar-icon-button,
+  .quick-tool-button {
+    width: 34px;
+    height: 34px;
+  }
+
+  .toolbar-icon-button img,
+  .quick-tool-button img {
+    width: 26px;
+    height: 26px;
+  }
+}
+
+@media only screen and (max-width: 700px) {
+  .game-toolbar {
+    height: 40px;
+    padding: 5px 6px;
+    border-radius: 13px;
+  }
+
+  .toolbar-icon-button,
+  .quick-tool-button {
+    width: 28px;
+    height: 28px;
+  }
+
+  .toolbar-icon-button img,
+  .quick-tool-button img {
+    width: 23px;
+    height: 23px;
+  }
+}
+
+@media only screen and (max-width: 520px) {
+  .launch-button {
+    min-width: 150px;
+    height: 30px;
+    font-size: 16px;
+  }
+
+  .footer-action-row {
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    bottom: -110px;
+    width: 100%;
+    padding: 0 12px;
+  }
+
+  .footer-action-button {
+    width: 100%;
+    max-width: 330px;
+    min-width: 0;
+    height: 40px;
+    font-size: 17px;
+  }
+}
+
+@media only screen and (max-width: 500px) {
+  .game-toolbar {
+    height: 30px;
+    padding: 4px 10px;
+    border-radius: 10px;
+  }
+
+  .quick-tools-panel {
+    gap: 1px;
+  }
+
+  .toolbar-icon-button,
+  .quick-tool-button {
+    width: 24px;
+    height: 24px;
+  }
+
+  .toolbar-icon-button img,
+  .quick-tool-button img {
+    width: 18px;
+    height: 18px;
+  }
+}
+
+@media only screen and (max-width: 452px) {
+  .game-toolbar {
+    top: 7px;
+    height: 20px;
+    padding: 3px 8px;
+    border-radius: 9px;
+  }
+
+  .quick-tools-panel {
+    gap: 0;
+  }
+
+  .toolbar-icon-button,
+  .quick-tool-button {
+    width: 22px;
+    height: 22px;
+  }
+
+  .toolbar-icon-button img,
+  .quick-tool-button img {
+    width: 16px !important;
+    height: 16px !important;
+  }
+
+  .launch-button {
+    min-width: 140px;
+    height: 28px;
+    font-size: 16px;
+  }
+
+  .footer-action-button {
+    max-width: 300px;
+    height: 36px;
+    font-size: 16px;
+  }
+}
+
+@media only screen and (max-width: 400px) {
+  .launch-button {
+    min-width: 130px;
+    height: 26px;
+    padding: 6px 12px;
+    font-size: 16px;
+  }
+
+  .footer-action-button {
+    max-width: 280px;
+    height: 34px;
+    font-size: 16px;
+  }
+}
+
+@media only screen and (max-width: 360px) {
+  .game-toolbar {
+    padding: 2px 6px;
+  }
+
+  .toolbar-icon-button,
+  .quick-tool-button {
+    width: 20px;
+    height: 20px;
+  }
+
+  .toolbar-icon-button img,
+  .quick-tool-button img {
+    width: 14px;
+    height: 14px;
+  }
+}
+
+@media only screen and (pointer: coarse) and (orientation: landscape) {
+  body {
+    min-height: 100svh;
+    padding: 0;
+    margin: 0;
+  }
+
+  .desert-game-root {
+    width: 100vw;
+    height: 100vh;
+    max-width: none;
+    aspect-ratio: auto;
+  }
+
+  .desert-canvas {
+    width: 100vw;
+    height: 100svh;
+    border-radius: 0;
+  }
+
+  .launch-panel {
+    bottom: 5%;
+  }
+}

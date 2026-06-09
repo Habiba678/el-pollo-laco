@@ -1,0 +1,21 @@
+@import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600&family=Rye&display=swap');
+
+.start-screen-btn,
+.bottom-action-btn,
+.mobile-top-btn,
+.mobile-info-item,
+h1,
+h2 {
+    font-family: 'Rye', cursive;
+}
+
+.overlay-title,
+.overlay-section h3 {
+    font-family: 'Rye', cursive;
+}
+
+.overlay-section p,
+.overlay-section li,
+.overlay-section a {
+    font-family: 'Fredoka', Arial, Helvetica, sans-serif !important;
+}
