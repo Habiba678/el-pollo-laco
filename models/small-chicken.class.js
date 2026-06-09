@@ -1,5 +1,5 @@
 /**
- * Represents a small chicken enemy in the level.
+ * Small chicken enemy.
  */
 class ChickenSmall extends MovableObject {
     x = 620 + Math.random() * 700;
@@ -9,6 +9,8 @@ class ChickenSmall extends MovableObject {
     height = 55;
     speed = 0.25 + Math.random() * 0.3;
     isDefeated = false;
+    moveTimer = null;
+    imageTimer = null;
 
     offset = {
         top: 3,
@@ -26,47 +28,80 @@ class ChickenSmall extends MovableObject {
     defeatImage = "./assets/img/3_enemies_chicken/chicken_small/2_dead/dead.png";
 
     /**
-     * Creates a small chicken, loads its images and starts its behavior.
+     * Creates the small chicken.
      */
     constructor() {
         super();
+        this.prepareImages();
+        this.startSmallChicken();
+    }
+
+    /**
+     * Loads all images.
+     * @returns {void}
+     */
+    prepareImages() {
         this.loadImage(this.walkingImages[0]);
         this.loadImages(this.walkingImages);
         this.loadImages([this.defeatImage]);
-        this.startBehavior();
     }
 
     /**
-     * Starts movement and animation loops.
+     * Starts all updates.
      * @returns {void}
      */
-    startBehavior() {
-        setInterval(() => this.moveSmallChicken(), 1000 / 60);
-        setInterval(() => this.animateSmallChicken(), 200);
+    startSmallChicken() {
+        this.startWalkingTimer();
+        this.startSpriteTimer();
     }
 
     /**
-     * Moves the small chicken while it is active.
+     * Starts movement updates.
      * @returns {void}
      */
-    moveSmallChicken() {
-        if (this.isDefeated) return;
+    startWalkingTimer() {
+        this.moveTimer = setInterval(() => {
+            this.updateWalk();
+        }, 1000 / 60);
+    }
+
+    /**
+     * Starts image updates.
+     * @returns {void}
+     */
+    startSpriteTimer() {
+        this.imageTimer = setInterval(() => {
+            this.updateSprite();
+        }, 200);
+    }
+
+    /**
+     * Updates movement.
+     * @returns {void}
+     */
+    updateWalk() {
+        if (this.isDefeated) {
+            return;
+        }
 
         this.moveLeft();
     }
 
     /**
-     * Plays the walking animation while the chicken is active.
+     * Updates animation.
      * @returns {void}
      */
-    animateSmallChicken() {
-        if (this.isDefeated) return;
+    updateSprite() {
+        if (this.isDefeated) {
+            return;
+        }
 
-        this.playAnimation(this.walkingImages);
+        const frames = this.walkingImages;
+        this.playAnimation(frames);
     }
 
     /**
-     * Switches the small chicken into defeated state.
+     * Changes to defeated state.
      * @returns {void}
      */
     defeat() {
@@ -76,7 +111,7 @@ class ChickenSmall extends MovableObject {
     }
 
     /**
-     * Keeps compatibility with older code that calls die().
+     * Old defeat call.
      * @returns {void}
      */
     die() {
@@ -84,7 +119,7 @@ class ChickenSmall extends MovableObject {
     }
 
     /**
-     * Keeps compatibility with older code that calls kill().
+     * Second defeat call.
      * @returns {void}
      */
     kill() {
@@ -92,10 +127,14 @@ class ChickenSmall extends MovableObject {
     }
 
     /**
-     * Checks whether the small chicken is defeated.
-     * @returns {boolean} True if the small chicken is defeated.
+     * Checks defeat state.
+     * @returns {boolean} True if defeated.
      */
     isDead() {
-        return this.isDefeated;
+        if (this.isDefeated) {
+            return true;
+        }
+
+        return false;
     }
 }
