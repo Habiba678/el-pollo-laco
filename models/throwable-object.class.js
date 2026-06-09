@@ -1,62 +1,80 @@
 /**
- * Represents a throwable salsa bottle.
+ * Salsa bottle that can be thrown.
  */
 class ThrowableObject extends MovableObject {
-    groundLevel = 360;
+    floorLine = 360;
     broken = false;
     markedForRemoval = false;
-    moveInterval = null;
-    splashImage = './assets/img/6_salsa_bottle/bottle_rotation/bottle_splash/1_bottle_splash.png';
+    movementTimer = null;
+
+    bottleImage = "./assets/img/6_salsa_bottle/salsa_bottle.png";
+    splashImage = "./assets/img/6_salsa_bottle/bottle_rotation/bottle_splash/1_bottle_splash.png";
 
     /**
-     * Creates a throwable bottle.
-     * @param {number} x Start x-position.
-     * @param {number} y Start y-position.
-     * @param {boolean} otherDirection True if the bottle should fly left.
+     * Builds a bottle at the throw position.
+     * @param {number} x Start x position.
+     * @param {number} y Start y position.
+     * @param {boolean} otherDirection True when flying left.
      */
     constructor(x, y, otherDirection = false) {
         super();
-        this.loadImage('./assets/img/6_salsa_bottle/salsa_bottle.png');
-        this.loadImages([this.splashImage]);
-
         this.x = x;
         this.y = y;
         this.width = 100;
         this.height = 60;
         this.otherDirection = otherDirection;
 
-        this.startThrow();
+        this.loadImage(this.bottleImage);
+        this.loadImages([this.splashImage]);
+        this.beginFlight();
     }
 
     /**
-     * Starts the bottle movement.
+     * Gives the bottle gravity and movement.
      * @returns {void}
      */
-    startThrow() {
+    beginFlight() {
         this.speedY = 30;
         this.applyGravity();
 
-        this.moveInterval = setInterval(() => {
-            if (this.broken) return;
-
-            this.x += this.otherDirection ? -10 : 10;
-
-            if (this.hasTouchedGround()) {
-                this.breakBottle();
-            }
+        this.movementTimer = setInterval(() => {
+            this.moveInAir();
         }, 1000 / 50);
     }
 
     /**
-     * Checks if the bottle has reached the ground.
-     * @returns {boolean} True if the bottle touched the ground.
+     * Moves the bottle one step.
+     * @returns {void}
      */
-    hasTouchedGround() {
-        return this.y >= this.groundLevel && this.speedY <= 0;
+    moveInAir() {
+        if (this.broken) return;
+
+        let nextX = this.x + 10;
+
+        if (this.otherDirection) {
+            nextX = this.x - 10;
+        }
+
+        this.x = nextX;
+
+        if (this.isOnFloor()) {
+            this.breakBottle();
+        }
     }
 
     /**
-     * Changes the bottle into its broken state.
+     * Checks the ground contact.
+     * @returns {boolean} True if the bottle touches the ground.
+     */
+    isOnFloor() {
+        if (this.y < this.floorLine) return false;
+        if (this.speedY > 0) return false;
+
+        return true;
+    }
+
+    /**
+     * Switches the bottle into splash mode.
      * @returns {void}
      */
     breakBottle() {
@@ -65,39 +83,40 @@ class ThrowableObject extends MovableObject {
         this.broken = true;
         this.speedY = 0;
         this.stopMovement();
-        this.showSplash();
+        this.showSplashImage();
     }
 
     /**
-     * Shows the splash image for a short time.
+     * Shows the broken bottle image.
      * @returns {void}
      */
-    showSplash() {
-        this.y = this.groundLevel;
+    showSplashImage() {
+        this.y = this.floorLine;
         this.img = this.imageCache[this.splashImage];
 
-        setTimeout(() => {
+        const removeBottle = () => {
             this.markedForRemoval = true;
-        }, 180);
+        };
+
+        window.setTimeout(removeBottle, 180);
     }
 
     /**
-     * Stops bottle movement.
+     * Stops the movement timer.
      * @returns {void}
      */
     stopMovement() {
-        if (!this.moveInterval) return;
+        if (!this.movementTimer) return;
 
-        clearInterval(this.moveInterval);
-        this.moveInterval = null;
+        clearInterval(this.movementTimer);
+        this.movementTimer = null;
     }
 
     /**
-     * Cleans up the bottle.
+     * Stops open timers before removing.
      * @returns {void}
      */
     dispose() {
         this.stopMovement();
     }
 }
-    
