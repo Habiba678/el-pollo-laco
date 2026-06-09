@@ -6,6 +6,7 @@ class World {
     gameOver = false;
     paused = false;
     loopId = null;
+    endbossManager;
 
     level = createLevel1();
     character = new Character();
@@ -43,12 +44,13 @@ class World {
         this.ctx = canvas.getContext("2d");
         this.keyboard = keyboard;
         this.setupWorld();
+        this.endbossManager = new EndbossManager(this);
         this.startLoop();
         this.render();
     }
 
     /**
-     * Connects important game objects with this world.
+     * Connects objects with this world.
      * @returns {void}
      */
     setupWorld() {
@@ -61,7 +63,7 @@ class World {
     }
 
     /**
-     * Starts repeated game checks.
+     * Starts world checks.
      * @returns {void}
      */
     startLoop() {
@@ -72,10 +74,12 @@ class World {
     }
 
     /**
-     * Runs collision, collection and throw checks.
+     * Runs all world logic.
      * @returns {void}
      */
     runChecks() {
+        this.endbossManager.updateBoss();
+        this.endbossManager.checkBossContact();
         this.checkEnemies();
         this.checkCollectibles();
         this.checkThrow();
@@ -88,7 +92,7 @@ class World {
     }
 
     /**
-     * Throws a bottle if the player owns one.
+     * Throws one bottle.
      * @returns {void}
      */
     checkThrow() {
@@ -107,7 +111,7 @@ class World {
     }
 
     /**
-     * Handles all enemy contacts with the player.
+     * Checks enemy contacts.
      * @returns {void}
      */
     checkEnemies() {
@@ -116,8 +120,10 @@ class World {
             if (!this.character.isColliding(enemy)) continue;
 
             if (enemy instanceof Endboss) {
-                this.damagePlayer();
-            } else if (this.isJumpHit(enemy)) {
+                continue;
+            }
+
+            if (this.isJumpHit(enemy)) {
                 this.removeEnemy(enemy, i, true);
             } else {
                 this.damagePlayer();
@@ -126,7 +132,7 @@ class World {
     }
 
     /**
-     * Checks if the player jumps on an enemy.
+     * Checks jump hit.
      * @param {MovableObject} enemy Enemy object.
      * @returns {boolean} True if hit from above.
      */
@@ -141,7 +147,7 @@ class World {
     }
 
     /**
-     * Damages the player and refreshes the health bar.
+     * Damages player.
      * @returns {void}
      */
     damagePlayer() {
@@ -152,10 +158,10 @@ class World {
     }
 
     /**
-     * Removes one enemy after a short delay.
+     * Removes one enemy.
      * @param {MovableObject} enemy Enemy object.
      * @param {number} index Enemy index.
-     * @param {boolean} bounce True if player should bounce.
+     * @param {boolean} bounce Player bounce.
      * @returns {void}
      */
     removeEnemy(enemy, index, bounce = false) {
@@ -170,7 +176,7 @@ class World {
     }
 
     /**
-     * Handles bottle and coin pickups.
+     * Checks items.
      * @returns {void}
      */
     checkCollectibles() {
@@ -190,7 +196,7 @@ class World {
     }
 
     /**
-     * Updates the bottle status bar.
+     * Updates bottle bar.
      * @returns {void}
      */
     updateBottleBar() {
@@ -200,7 +206,7 @@ class World {
     }
 
     /**
-     * Updates the coin status bar.
+     * Updates coin bar.
      * @returns {void}
      */
     updateCoinBar() {
@@ -217,7 +223,7 @@ class World {
     }
 
     /**
-     * Checks thrown bottles against enemies.
+     * Checks bottle hits.
      * @returns {void}
      */
     checkBottleHits() {
@@ -247,8 +253,7 @@ class World {
         }
 
         if (enemy instanceof Endboss) {
-            if (typeof enemy.hit === "function") enemy.hit();
-            this.updateBossBar(enemy);
+            this.endbossManager.handleBottleHit(enemy);
             return;
         }
 
@@ -256,19 +261,7 @@ class World {
     }
 
     /**
-     * Refreshes the boss status bar.
-     * @param {Endboss} boss Boss object.
-     * @returns {void}
-     */
-    updateBossBar(boss) {
-        let value = boss.healthValue;
-
-        if (typeof value !== "number") value = boss.lifePoints;
-        if (typeof value === "number") this.bossBar.setPercentage(value);
-    }
-
-    /**
-     * Removes inactive thrown bottles.
+     * Removes inactive bottles.
      * @returns {void}
      */
     cleanBottles() {
@@ -283,7 +276,7 @@ class World {
     }
 
     /**
-     * Draws the full world.
+     * Draws the world.
      * @returns {void}
      */
     render() {
@@ -308,7 +301,7 @@ class World {
     }
 
     /**
-     * Clears the canvas.
+     * Clears canvas.
      * @returns {void}
      */
     clearCanvas() {
@@ -316,7 +309,7 @@ class World {
     }
 
     /**
-     * Draws all objects of a group.
+     * Draws object group.
      * @param {DrawableObject[]} group Drawable objects.
      * @returns {void}
      */
@@ -329,7 +322,7 @@ class World {
     }
 
     /**
-     * Draws one object, mirrored if needed.
+     * Draws one object.
      * @param {DrawableObject} object Drawable object.
      * @returns {void}
      */
@@ -345,19 +338,17 @@ class World {
         this.ctx.save();
         this.ctx.translate(object.width, 0);
         this.ctx.scale(-1, 1);
-
         object.x = object.x * -1;
         object.draw(this.ctx);
         if (typeof object.drawFrame === "function") object.drawFrame(this.ctx);
         object.x = object.x * -1;
-
         this.ctx.restore();
     }
 
     /**
-     * Stops the world and opens a screen after a delay.
+     * Stops world.
      * @param {Function} screenFunction Screen function.
-     * @param {number} delay Delay in milliseconds.
+     * @param {number} delay Delay.
      * @returns {void}
      */
     finishWorld(screenFunction, delay = 310) {

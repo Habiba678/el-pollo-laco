@@ -1,26 +1,27 @@
 /**
- * Controls the final chicken boss logic.
+ * Final boss.
  */
 class Endboss extends MovableObject {
-    x = 2500;
-    y = 55;
-    width = 250;
-    height = 400;
+    x = 2200;
+    y = 140;
+    width = 180;
+    height = 260;
 
-    movingSpeed = 1.08;
-    leapSpeed = 3.05;
+    movingSpeed = 1.1;
+    leapSpeed = 3.2;
     healthValue = 100;
     bottleDamage = 20;
 
     world = null;
     isInFightMode = false;
     isLeaping = false;
+    otherDirection = false;
 
     offset = {
-        top: 85,
-        bottom: 25,
-        left: 38,
-        right: 42
+        top: 45,
+        bottom: 5,
+        left: 15,
+        right: 15
     };
 
     watchFrames = [
@@ -54,141 +55,147 @@ class Endboss extends MovableObject {
     ];
 
     /**
-     * Creates the boss and starts its image loop.
+     * Creates the boss.
      */
     constructor() {
         super();
         this.loadImage(this.watchFrames[0]);
-        this.prepareBossSprites();
-        this.groundLevel = this.y;
+        this.loadBossImages();
+        this.groundLevel = 180;
         this.applyGravity();
-        this.startImageUpdates();
+        this.startVisualLoop();
     }
 
     /**
-     * Loads all boss image groups.
+     * Loads boss images.
      * @returns {void}
      */
-    prepareBossSprites() {
-        const spriteGroups = [
+    loadBossImages() {
+        const groups = [
             this.watchFrames,
             this.stepFrames,
             this.painFrames,
             this.fallFrames
         ];
 
-        for (let index = 0; index < spriteGroups.length; index++) {
-            this.loadImages(spriteGroups[index]);
+        for (let i = 0; i < groups.length; i++) {
+            this.loadImages(groups[i]);
         }
     }
 
     /**
-     * Starts repeated visual updates.
+     * Starts image loop.
      * @returns {void}
      */
-    startImageUpdates() {
+    startVisualLoop() {
         setInterval(() => {
-            this.showCurrentState();
-        }, 185);
+            this.updateBossImage();
+        }, 180);
     }
 
     /**
-     * Selects the visible boss animation.
+     * Updates boss image.
      * @returns {void}
      */
-    showCurrentState() {
-        let selectedFrames = this.watchFrames;
-
-        if (this.healthValue < 1) {
-            selectedFrames = this.fallFrames;
-        } else if (this.isHurt()) {
-            selectedFrames = this.painFrames;
-        } else if (this.isInFightMode) {
-            selectedFrames = this.stepFrames;
+    updateBossImage() {
+        if (this.isDead()) {
+            this.playAnimation(this.fallFrames);
+            return;
         }
 
-        this.playAnimation(selectedFrames);
+        if (this.isHurt()) {
+            this.playAnimation(this.painFrames);
+            return;
+        }
+
+        if (this.isInFightMode) {
+            this.playAnimation(this.stepFrames);
+            return;
+        }
+
+        this.playAnimation(this.watchFrames);
     }
 
     /**
-     * Moves closer to the player without touching too early.
+     * Moves toward player.
      * @param {number} playerX Player x position.
      * @returns {void}
      */
     approachPlayer(playerX) {
-        if (this.healthValue < 1) return;
+        if (this.isDead()) return;
         if (this.isLeaping) return;
 
-        const border = playerX + 130;
-        const nextX = this.x - this.movingSpeed;
+        const stopX = playerX + 115;
+        const nextPosition = this.x - this.movingSpeed;
 
-        if (nextX > border) {
-            this.x = nextX;
+        if (nextPosition > stopX) {
+            this.x = nextPosition;
+            this.otherDirection = false;
             return;
         }
 
-        if (this.x > border) {
-            this.x = border;
-        }
+        this.x = stopX;
+        this.otherDirection = false;
     }
 
     /**
-     * Starts a leap attack.
+     * Starts jump attack.
      * @returns {void}
      */
     beginLeapAttack() {
-        if (this.canLeap()) {
-            this.isLeaping = true;
-            this.speedY = 20;
-            this.continueLeapAttack();
-        }
+        if (!this.canStartLeap()) return;
+
+        this.isLeaping = true;
+        this.speedY = 20;
+        this.runLeapMovement();
     }
 
     /**
-     * Checks if the leap attack can start.
-     * @returns {boolean} True if the leap may start.
+     * Checks leap state.
+     * @returns {boolean}
      */
-    canLeap() {
+    canStartLeap() {
         if (!this.world) return false;
+        if (this.isDead()) return false;
         if (this.isLeaping) return false;
-        if (this.healthValue < 1) return false;
 
         return true;
     }
 
     /**
-     * Moves the boss during the leap attack.
+     * Moves during leap.
      * @returns {void}
      */
-    continueLeapAttack() {
-        const leapTimer = setInterval(() => {
-            const shouldEnd = this.shouldStopLeap();
-
-            if (shouldEnd) {
+    runLeapMovement() {
+        const timer = setInterval(() => {
+            if (this.shouldFinishLeap()) {
+                clearInterval(timer);
                 this.isLeaping = false;
-                clearInterval(leapTimer);
-            } else {
-                this.x = this.x - this.leapSpeed;
+                return;
             }
+
+            this.x = this.x - this.leapSpeed;
+            this.otherDirection = false;
         }, 1000 / 60);
     }
 
     /**
-     * Checks if the leap attack is finished.
-     * @returns {boolean} True if the leap should stop.
+     * Checks leap finish.
+     * @returns {boolean}
      */
-    shouldStopLeap() {
+    shouldFinishLeap() {
         const player = this.world ? this.world.character : null;
+        const landed = !this.isAboveGround() && this.speedY === 0;
 
-        if (this.healthValue < 1) return true;
+        if (this.isDead()) return true;
         if (!player) return true;
         if (this.isColliding(player)) return true;
 
-        return !this.isAboveGround() && this.speedY === 0;
+        return landed;
     }
 
     /**
-     * Applies damage to the boss.
+     * Reduces health.
      * @returns {void}
      */
     receiveBottleHit() {
@@ -204,7 +211,7 @@ class Endboss extends MovableObject {
     }
 
     /**
-     * Compatibility method for bottle-hit logic.
+     * Bottle hit alias.
      * @returns {void}
      */
     hit() {
@@ -212,14 +219,10 @@ class Endboss extends MovableObject {
     }
 
     /**
-     * Compatibility method for defeat checks.
-     * @returns {boolean} True if the boss has no health left.
+     * Checks death.
+     * @returns {boolean}
      */
     isDead() {
-        if (this.healthValue > 0) {
-            return false;
-        }
-
-        return true;
+        return this.healthValue <= 0;
     }
 }
