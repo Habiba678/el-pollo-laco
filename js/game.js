@@ -2,6 +2,7 @@ let canvas;
 let ctx;
 let world;
 let keyboard = new Keyboard();
+let gameAudio = new GameAudio();
 
 let canvasView;
 let mobileControls;
@@ -38,6 +39,8 @@ function init() {
     createTouchHelpers();
     connectPageEvents();
     openStartScene();
+    audioMuted = gameAudio.audioMuted;
+    updateSoundUi(audioMuted);
 }
 
 /**
@@ -131,6 +134,7 @@ function openStartScene() {
 
     refreshGameUi();
 
+    if (gameAudio) gameAudio.stopAllAudio();
     if (canvasView) canvasView.showStart();
 }
 
@@ -147,7 +151,8 @@ function beginRound() {
 
     refreshGameUi();
 
-    world = new World(canvas, keyboard);
+    world = new World(canvas, keyboard, gameAudio);
+    gameAudio.playMainTheme();
 }
 
 /**
@@ -211,12 +216,16 @@ function refreshScreenHelpers() {
 }
 
 /**
- * Toggles sound UI state.
+ * Toggles sound state and updates icon.
  * @returns {void}
  */
 function switchAudioMode() {
-    audioMuted = !audioMuted;
+    audioMuted = gameAudio.toggleMute();
     updateSoundUi(audioMuted);
+
+    if (!audioMuted && isGameRunning) {
+        gameAudio.playMainTheme();
+    }
 }
 
 /**
@@ -224,6 +233,7 @@ function switchAudioMode() {
  * @returns {void}
  */
 function showWinScreen() {
+    if (gameAudio) gameAudio.playWinTheme();
     endRoundWithImage(END_IMAGES.success);
 }
 
@@ -232,6 +242,7 @@ function showWinScreen() {
  * @returns {void}
  */
 function showGameOverScreen() {
+    if (gameAudio) gameAudio.playLoseTheme();
     endRoundWithImage(END_IMAGES.crash, END_IMAGES.fail);
 }
 
@@ -240,6 +251,7 @@ function showGameOverScreen() {
  * @returns {void}
  */
 function showNoBottlesScreen() {
+    if (gameAudio) gameAudio.playNoBottleTheme();
     endRoundWithImage(END_IMAGES.fail);
 }
 

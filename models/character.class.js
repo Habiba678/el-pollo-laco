@@ -1,3 +1,6 @@
+/**
+ * Controls the player character, movement, animations and audio.
+ */
 class Character extends MovableObject {
     world;
 
@@ -7,14 +10,8 @@ class Character extends MovableObject {
     height = 250;
     speed = 10;
     groundY = 180;
-    
 
-    offset = {
-        top: 60,
-        bottom: 10,
-        left: 25,
-        right: 25
-    };
+    offset = { top: 60, bottom: 10, left: 25, right: 25 };
 
     idleImages = [
         "./assets/img/2_character_pepe/1_idle/idle/I-1.png",
@@ -77,7 +74,6 @@ class Character extends MovableObject {
         "./assets/img/2_character_pepe/5_dead/D-57.png"
     ];
 
-    walkAudio = new Audio("./assets/audio/run.mp3");
     idleCounter = 0;
     jumpFrame = 0;
     knockbackTimer = null;
@@ -90,13 +86,12 @@ class Character extends MovableObject {
         super();
         this.loadImage(this.idleImages[0]);
         this.loadCharacterImages();
-        this.walkAudio.volume = 0.2;
         this.applyGravity();
         this.startLoops();
     }
 
     /**
-     * Loads character images.
+     * Loads all character image groups.
      * @returns {void}
      */
     loadCharacterImages() {
@@ -118,7 +113,7 @@ class Character extends MovableObject {
     }
 
     /**
-     * Updates movement.
+     * Updates movement and camera.
      * @returns {void}
      */
     updateMovement() {
@@ -137,55 +132,56 @@ class Character extends MovableObject {
     moveByInput() {
         if (this.isKnockedBack) return;
 
-        if (this.canMoveRight()) {
-            this.moveRight();
-            this.otherDirection = false;
-            this.playWalkAudio();
-            this.resetIdle();
-        }
-
-        if (this.canMoveLeft()) {
-            this.moveLeft();
-            this.otherDirection = true;
-            this.playWalkAudio();
-            this.resetIdle();
-        }
+        this.handleSideMove("RIGHT");
+        this.handleSideMove("LEFT");
     }
 
     /**
-     * Checks right movement.
-     * @returns {boolean}
+     * Handles one movement direction.
+     * @param {string} direction Movement direction.
+     * @returns {void}
      */
-    canMoveRight() {
-        const levelEnd = this.world?.level?.level_end_x || 2200;
-        return this.world.keyboard.RIGHT && this.x < levelEnd && !this.isBossBlocking();
+    handleSideMove(direction) {
+        if (!this.canMoveSide(direction)) return;
+
+        direction === "RIGHT" ? this.moveRight() : this.moveLeft();
+        this.otherDirection = direction === "LEFT";
+        this.playWalkAudio();
+        this.resetIdle();
     }
 
     /**
-     * Checks left movement.
-     * @returns {boolean}
+     * Checks side movement.
+     * @param {string} direction Movement direction.
+     * @returns {boolean} True if movement is allowed.
      */
-    canMoveLeft() {
+    canMoveSide(direction) {
+        if (direction === "RIGHT") {
+            return this.world.keyboard.RIGHT &&
+                this.x < this.world.level.level_end_x &&
+                !this.isBossBlocking();
+        }
+
         return this.world.keyboard.LEFT && this.x > 0;
     }
 
     /**
-     * Handles jump key.
+     * Handles jump input.
      * @returns {void}
      */
     jumpByInput() {
         if (this.isKnockedBack) return;
+        if (!this.world.keyboard.SPACE || this.isAboveGround()) return;
 
-        if (this.world.keyboard.SPACE && !this.isAboveGround()) {
-            this.jump();
-            this.resetIdle();
-            this.jumpFrame = 0;
-        }
+        this.jump();
+        this.playJumpAudio();
+        this.resetIdle();
+        this.jumpFrame = 0;
     }
 
     /**
      * Checks air state.
-     * @returns {boolean}
+     * @returns {boolean} True if character is above ground.
      */
     isAboveGround() {
         return this.y < this.groundY;
@@ -201,32 +197,50 @@ class Character extends MovableObject {
 
     /**
      * Checks boss blocking.
-     * @returns {boolean}
+     * @returns {boolean} True if boss blocks.
      */
     isBossBlocking() {
         const boss = this.world?.endbossManager?.findEndboss();
-        if (!boss || typeof boss.isDead !== "function" || boss.isDead()) return false;
 
+        if (!boss || typeof boss.isDead !== "function" || boss.isDead()) {
+            return false;
+        }
+
+        return this.isNearBossSide(boss) && this.hasBossHeightOverlap(boss);
+    }
+
+    /**
+     * Checks horizontal boss block.
+     * @param {Endboss} boss Boss object.
+     * @returns {boolean} True if boss is in front.
+     */
+    isNearBossSide(boss) {
         const characterRight = this.x + this.width - this.offset.right;
         const bossLeft = boss.x + (boss.offset?.left || 0);
+
+        return characterRight + this.speed >= bossLeft && this.x < boss.x;
+    }
+
+    /**
+     * Checks vertical boss overlap.
+     * @param {Endboss} boss Boss object.
+     * @returns {boolean} True if vertical overlap exists.
+     */
+    hasBossHeightOverlap(boss) {
         const characterTop = this.y + this.offset.top;
         const characterBottom = this.y + this.height - this.offset.bottom;
         const bossTop = boss.y + (boss.offset?.top || 0);
         const bossBottom = boss.y + boss.height - (boss.offset?.bottom || 0);
 
-        return characterRight + this.speed >= bossLeft &&
-            this.x < boss.x &&
-            characterBottom > bossTop &&
-            characterTop < bossBottom;
+        return characterBottom > bossTop && characterTop < bossBottom;
     }
 
     /**
-     * Updates animation.
+     * Updates character animation.
      * @returns {void}
      */
     updateAnimation() {
         if (!this.world || this.world.gameOver) return;
-
         if (this.isDead()) return this.playAnimation(this.deadImages);
         if (this.isHurt()) return this.playAnimation(this.hurtImages);
         if (this.isAboveGround()) return this.playJumpAnimation();
@@ -236,20 +250,18 @@ class Character extends MovableObject {
     }
 
     /**
-     * Plays jump images.
+     * Plays jump animation.
      * @returns {void}
      */
     playJumpAnimation() {
         const index = Math.min(this.jumpFrame, this.jumpingImages.length - 1);
-        this.img = this.imageCache[this.jumpingImages[index]];
 
-        if (this.jumpFrame < this.jumpingImages.length - 1) {
-            this.jumpFrame++;
-        }
+        this.img = this.imageCache[this.jumpingImages[index]];
+        if (this.jumpFrame < this.jumpingImages.length - 1) this.jumpFrame++;
     }
 
     /**
-     * Plays idle images.
+     * Plays idle animation.
      * @returns {void}
      */
     playIdleAnimation() {
@@ -263,11 +275,13 @@ class Character extends MovableObject {
     }
 
     /**
-     * Checks movement.
-     * @returns {boolean}
+     * Checks movement state.
+     * @returns {boolean} True if character is moving.
      */
     isMoving() {
-        return this.world.keyboard.LEFT || this.world.keyboard.RIGHT || this.isKnockedBack;
+        return this.world.keyboard.LEFT ||
+            this.world.keyboard.RIGHT ||
+            this.isKnockedBack;
     }
 
     /**
@@ -279,54 +293,85 @@ class Character extends MovableObject {
     }
 
     /**
-     * Plays walk sound.
+     * Plays walking sound.
      * @returns {void}
      */
     playWalkAudio() {
-        if (
-            this.world?.gameAudio &&
-            (this.world.gameAudio.audioMuted || this.world.gameAudio.soundLocked)
-        ) {
-            return;
-        }
-
-        if (!this.walkAudio.paused) return;
-
-        this.walkAudio.play().catch(() => {});
+        this.playCharacterSound("run");
     }
 
     /**
-     * Stops walk sound.
+     * Stops walking sound.
      * @returns {void}
      */
     stopWalkAudio() {
-        this.walkAudio.pause();
-        this.walkAudio.currentTime = 0;
+        if (!this.world?.gameAudio) return;
+
+        this.world.gameAudio.stopEffect("run");
     }
 
     /**
-     * Pushes character back.
+     * Plays jump sound.
+     * @returns {void}
+     */
+    playJumpAudio() {
+        this.playCharacterSound("jump");
+    }
+
+    /**
+     * Plays one character sound.
+     * @param {string} name Sound name.
+     * @returns {void}
+     */
+    playCharacterSound(name) {
+        if (!this.world?.gameAudio) return;
+
+        this.world.gameAudio.playEffect(name);
+    }
+
+    /**
+     * Starts knockback.
      * @param {number} distance Push distance.
      * @param {number} jumpPower Jump power.
-     * @param {number} steps Steps.
+     * @param {number} steps Movement steps.
      * @returns {void}
      */
     startKnockback(distance = 120, jumpPower = 26, steps = 12) {
         this.stopKnockback();
         this.isKnockedBack = true;
         this.speedY = jumpPower;
+        this.runKnockback(distance, steps);
+    }
 
+    /**
+     * Runs knockback movement.
+     * @param {number} distance Push distance.
+     * @param {number} steps Movement steps.
+     * @returns {void}
+     */
+    runKnockback(distance, steps) {
         const stepDistance = distance / steps;
         let currentStep = 0;
 
         this.knockbackTimer = setInterval(() => {
-            this.x = Math.max(0, this.x - stepDistance);
-            currentStep++;
-
-            if (currentStep >= steps) {
-                this.stopKnockback();
-            }
+            currentStep = this.moveKnockbackStep(stepDistance, currentStep, steps);
         }, 1000 / 60);
+    }
+
+    /**
+     * Moves one knockback step.
+     * @param {number} stepDistance Step distance.
+     * @param {number} currentStep Current step.
+     * @param {number} steps Max steps.
+     * @returns {number} Updated step.
+     */
+    moveKnockbackStep(stepDistance, currentStep, steps) {
+        this.x = Math.max(0, this.x - stepDistance);
+        currentStep++;
+
+        if (currentStep >= steps) this.stopKnockback();
+
+        return currentStep;
     }
 
     /**
