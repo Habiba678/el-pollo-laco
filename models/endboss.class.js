@@ -4,11 +4,12 @@
 class Endboss extends MovableObject {
     x = 2200;
     y = 140;
-    width = 180;
-    height = 260;
+    groundY = 140;
+    width = 170;
+    height = 310;
 
     movingSpeed = 1.1;
-    leapSpeed = 3.2;
+    leapSpeed = 3.5;
     healthValue = 100;
     bottleDamage = 20;
 
@@ -18,10 +19,10 @@ class Endboss extends MovableObject {
     otherDirection = false;
 
     offset = {
-        top: 45,
-        bottom: 5,
-        left: 15,
-        right: 15
+        top: 60,
+        bottom: 10,
+        left: 25,
+        right: 25
     };
 
     watchFrames = [
@@ -61,7 +62,6 @@ class Endboss extends MovableObject {
         super();
         this.loadImage(this.watchFrames[0]);
         this.loadBossImages();
-        this.groundLevel = 180;
         this.applyGravity();
         this.startVisualLoop();
     }
@@ -71,26 +71,22 @@ class Endboss extends MovableObject {
      * @returns {void}
      */
     loadBossImages() {
-        const groups = [
+        const allFrames = [
             this.watchFrames,
             this.stepFrames,
             this.painFrames,
             this.fallFrames
         ];
 
-        for (let i = 0; i < groups.length; i++) {
-            this.loadImages(groups[i]);
-        }
+        allFrames.forEach(frames => this.loadImages(frames));
     }
 
     /**
-     * Starts image loop.
+     * Starts boss image loop.
      * @returns {void}
      */
     startVisualLoop() {
-        setInterval(() => {
-            this.updateBossImage();
-        }, 180);
+        setInterval(() => this.updateBossImage(), 180);
     }
 
     /**
@@ -98,48 +94,30 @@ class Endboss extends MovableObject {
      * @returns {void}
      */
     updateBossImage() {
-        if (this.isDead()) {
-            this.playAnimation(this.fallFrames);
-            return;
-        }
-
-        if (this.isHurt()) {
-            this.playAnimation(this.painFrames);
-            return;
-        }
-
-        if (this.isInFightMode) {
-            this.playAnimation(this.stepFrames);
-            return;
-        }
+        if (this.isDead()) return this.playAnimation(this.fallFrames);
+        if (this.isHurt()) return this.playAnimation(this.painFrames);
+        if (this.isInFightMode) return this.playAnimation(this.stepFrames);
 
         this.playAnimation(this.watchFrames);
     }
 
     /**
-     * Moves toward player.
+     * Moves boss closer to player.
      * @param {number} playerX Player x position.
      * @returns {void}
      */
     approachPlayer(playerX) {
-        if (this.isDead()) return;
-        if (this.isLeaping) return;
+        if (this.isDead() || this.isLeaping) return;
 
-        const stopX = playerX + 115;
-        const nextPosition = this.x - this.movingSpeed;
+        const stopX = playerX + 110;
+        const nextX = this.x - this.movingSpeed;
 
-        if (nextPosition > stopX) {
-            this.x = nextPosition;
-            this.otherDirection = false;
-            return;
-        }
-
-        this.x = stopX;
+        this.x = nextX > stopX ? nextX : stopX;
         this.otherDirection = false;
     }
 
     /**
-     * Starts jump attack.
+     * Starts leap attack.
      * @returns {void}
      */
     beginLeapAttack() {
@@ -151,19 +129,15 @@ class Endboss extends MovableObject {
     }
 
     /**
-     * Checks leap state.
+     * Checks leap start.
      * @returns {boolean}
      */
     canStartLeap() {
-        if (!this.world) return false;
-        if (this.isDead()) return false;
-        if (this.isLeaping) return false;
-
-        return true;
+        return this.world && !this.isDead() && !this.isLeaping;
     }
 
     /**
-     * Moves during leap.
+     * Runs leap movement.
      * @returns {void}
      */
     runLeapMovement() {
@@ -174,9 +148,9 @@ class Endboss extends MovableObject {
                 return;
             }
 
-            this.x = this.x - this.leapSpeed;
+            this.x -= this.leapSpeed;
             this.otherDirection = false;
-        }, 1000 / 60);
+        }, 1000 / 80);
     }
 
     /**
@@ -187,23 +161,15 @@ class Endboss extends MovableObject {
         const player = this.world ? this.world.character : null;
         const landed = !this.isAboveGround() && this.speedY === 0;
 
-        if (this.isDead()) return true;
-        if (!player) return true;
-        if (this.isColliding(player)) return true;
-
-        return landed;
+        return this.isDead() || !player || this.isColliding(player) || landed;
     }
 
     /**
-     * Reduces health.
+     * Reduces boss health.
      * @returns {void}
      */
-    receiveBottleHit() {
-        this.healthValue = this.healthValue - this.bottleDamage;
-
-        if (this.healthValue < 0) {
-            this.healthValue = 0;
-        }
+    hit() {
+        this.healthValue = Math.max(0, this.healthValue - this.bottleDamage);
 
         if (this.healthValue > 0) {
             this.lastHit = Date.now();
@@ -211,15 +177,7 @@ class Endboss extends MovableObject {
     }
 
     /**
-     * Bottle hit alias.
-     * @returns {void}
-     */
-    hit() {
-        this.receiveBottleHit();
-    }
-
-    /**
-     * Checks death.
+     * Checks if boss is dead.
      * @returns {boolean}
      */
     isDead() {

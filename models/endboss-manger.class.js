@@ -16,7 +16,7 @@ class EndbossManager {
     }
 
     /**
-     * Updates the boss.
+     * Updates boss logic.
      * @returns {void}
      */
     updateBoss() {
@@ -33,52 +33,29 @@ class EndbossManager {
 
     /**
      * Finds endboss.
-     * @returns {Endboss|null} Found boss.
+     * @returns {Endboss|null}
      */
     findEndboss() {
-        let result = null;
-        let index = 0;
-
-        while (!result && index < this.world.level.enemies.length) {
-            const enemy = this.world.level.enemies[index];
-
-            if (enemy instanceof Endboss) {
-                result = enemy;
-            }
-
-            index++;
-        }
-
-        return result;
+        return this.world.level.enemies.find(enemy => enemy instanceof Endboss) || null;
     }
 
     /**
-     * Checks boss state.
+     * Checks if boss can act.
      * @param {Endboss|null} boss Boss object.
-     * @returns {boolean} True if boss can act.
+     * @returns {boolean}
      */
     canUseBoss(boss) {
-        if (!boss) return false;
-        if (this.world.gameOver) return false;
-        if (boss.isDead()) return false;
-
-        return true;
+        return boss && !boss.isDead() && !this.world.gameOver;
     }
 
     /**
      * Measures distance.
      * @param {Endboss} boss Boss object.
      * @param {Character} player Player object.
-     * @returns {number} Distance.
+     * @returns {number}
      */
     measureDistance(boss, player) {
-        const distance = boss.x - player.x;
-
-        if (distance < 0) {
-            return distance * -1;
-        }
-
-        return distance;
+        return Math.abs(boss.x - player.x);
     }
 
     /**
@@ -88,13 +65,13 @@ class EndbossManager {
      * @returns {void}
      */
     startFightMode(boss, distance) {
-        if (distance > 1200) return;
-
-        boss.isInFightMode = true;
+        if (distance < 500) {
+            boss.isInFightMode = true;
+        }
     }
 
     /**
-     * Moves boss.
+     * Moves boss closer.
      * @param {Endboss} boss Boss object.
      * @param {Character} player Player object.
      * @param {number} distance Distance.
@@ -102,41 +79,37 @@ class EndbossManager {
      */
     moveBossCloser(boss, player, distance) {
         if (!boss.isInFightMode) return;
-        if (this.jumpStop) return;
-        if (boss.isLeaping) return;
-        if (distance < 145) return;
+        if (this.jumpStop || boss.isLeaping) return;
+        if (distance <= 120) return;
 
         boss.approachPlayer(player.x);
     }
 
     /**
-     * Tries close attack.
+     * Starts leap attack if close.
      * @param {Endboss} boss Boss object.
      * @param {number} distance Distance.
      * @returns {void}
      */
     tryLeapAttack(boss, distance) {
         if (!boss.isInFightMode) return;
-        if (this.jumpStop) return;
-        if (boss.isLeaping) return;
-        if (distance > 180) return;
+        if (this.jumpStop || boss.isLeaping) return;
+        if (distance >= 170) return;
 
-        this.closeLeapForMoment();
+        this.lockJumpShortly();
         boss.beginLeapAttack();
     }
 
     /**
-     * Adds leap pause.
+     * Locks jump for a short time.
      * @returns {void}
      */
-    closeLeapForMoment() {
+    lockJumpShortly() {
         this.jumpStop = true;
 
-        const openAgain = () => {
+        window.setTimeout(() => {
             this.jumpStop = false;
-        };
-
-        window.setTimeout(openAgain, 1320);
+        }, 1400);
     }
 
     /**
@@ -159,15 +132,14 @@ class EndbossManager {
     }
 
     /**
-     * Boss answer after hit.
+     * Boss reacts after damage.
      * @param {Endboss} boss Boss object.
      * @returns {void}
      */
     answerAfterDamage(boss) {
         const now = Date.now();
-        const waitingTime = now - this.lastAnswerTime;
 
-        if (waitingTime < 640) return;
+        if (now - this.lastAnswerTime < 500) return;
 
         this.lastAnswerTime = now;
         this.tryLeapAttack(boss, 0);
@@ -190,58 +162,37 @@ class EndbossManager {
     }
 
     /**
-     * Handles player damage.
+     * Damages player.
      * @param {Character} player Player object.
      * @param {Endboss} boss Boss object.
      * @returns {void}
      */
     hitPlayer(player, boss) {
         this.contactStop = true;
-        this.reducePlayerEnergy(player);
-        this.pushPlayerAway(player);
+
+        player.hit(25);
+        this.world.lifeBar.setPercentage(player.energy);
+
+        if (typeof player.startKnockback === "function") {
+            player.startKnockback(-60, 18, 10);
+        }
+
         this.keepPlayerOutside(player, boss);
         this.freeContactLater();
     }
 
     /**
-     * Reduces player energy.
-     * @param {Character} player Player object.
-     * @returns {void}
-     */
-    reducePlayerEnergy(player) {
-        player.hit(24);
-        this.world.lifeBar.setPercentage(player.energy);
-    }
-
-    /**
-     * Pushes player away.
-     * @param {Character} player Player object.
-     * @returns {void}
-     */
-    pushPlayerAway(player) {
-        if (typeof player.startKnockback !== "function") return;
-
-        const push = {
-            distance: 58,
-            strength: 17,
-            steps: 11
-        };
-
-        player.startKnockback(push.distance, push.strength, push.steps);
-    }
-
-    /**
-     * Keeps player before boss.
+     * Keeps player outside boss.
      * @param {Character} player Player object.
      * @param {Endboss} boss Boss object.
      * @returns {void}
      */
     keepPlayerOutside(player, boss) {
-        const allowedX = boss.x - player.width - 12;
+        const safeX = boss.x - player.width - 10;
 
-        if (player.x <= allowedX) return;
-
-        player.x = allowedX;
+        if (player.x > safeX) {
+            player.x = safeX;
+        }
     }
 
     /**
@@ -249,11 +200,9 @@ class EndbossManager {
      * @returns {void}
      */
     freeContactLater() {
-        const unlock = () => {
+        window.setTimeout(() => {
             this.contactStop = false;
-        };
-
-        window.setTimeout(unlock, 460);
+        }, 450);
     }
 
     /**
@@ -264,10 +213,8 @@ class EndbossManager {
         this.world.bossBar.setPercentage(0);
         this.world.flyingBottles = [];
 
-        const showResult = () => {
+        window.setTimeout(() => {
             this.world.finishWorld(showWinScreen, 0);
-        };
-
-        window.setTimeout(showResult, 520);
+        }, 500);
     }
 }

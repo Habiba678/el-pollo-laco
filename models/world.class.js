@@ -22,23 +22,27 @@ class World {
 
     bottleItems = [
         new CollectibleObject(260, 350),
+        new CollectibleObject(520, 350),
         new CollectibleObject(690, 350),
+        new CollectibleObject(950, 350),
         new CollectibleObject(1080, 350),
-        new CollectibleObject(1420, 350)
+        new CollectibleObject(1280, 350),
+        new CollectibleObject(1420, 350),
+        new CollectibleObject(1650, 350)
     ];
 
     coinItems = [
         new CollectibleObject(430, 245, "coin"),
+        new CollectibleObject(650, 230, "coin"),
         new CollectibleObject(810, 220, "coin"),
+        new CollectibleObject(1020, 250, "coin"),
         new CollectibleObject(1190, 265, "coin"),
-        new CollectibleObject(1570, 235, "coin")
+        new CollectibleObject(1390, 230, "coin"),
+        new CollectibleObject(1570, 235, "coin"),
+        new CollectibleObject(1780, 250, "coin"),
+        new CollectibleObject(1980, 225, "coin")
     ];
 
-    /**
-     * Creates the active game world.
-     * @param {HTMLCanvasElement} canvas Game canvas.
-     * @param {Keyboard} keyboard Shared keyboard object.
-     */
     constructor(canvas, keyboard) {
         this.canvas = canvas;
         this.ctx = canvas.getContext("2d");
@@ -49,10 +53,6 @@ class World {
         this.render();
     }
 
-    /**
-     * Connects objects with this world.
-     * @returns {void}
-     */
     setupWorld() {
         this.character.world = this;
 
@@ -62,21 +62,13 @@ class World {
         }
     }
 
-    /**
-     * Starts world checks.
-     * @returns {void}
-     */
     startLoop() {
         this.loopId = setInterval(() => {
             if (this.gameOver || this.paused) return;
             this.runChecks();
-        }, 125);
+        }, 1000 / 60);
     }
 
-    /**
-     * Runs all world logic.
-     * @returns {void}
-     */
     runChecks() {
         this.endbossManager.updateBoss();
         this.endbossManager.checkBossContact();
@@ -91,10 +83,6 @@ class World {
         }
     }
 
-    /**
-     * Throws one bottle.
-     * @returns {void}
-     */
     checkThrow() {
         if (!this.keyboard.D || this.bottleCount <= 0) return;
 
@@ -102,7 +90,7 @@ class World {
         if (this.character.otherDirection) x = this.character.x + 25;
 
         this.flyingBottles.push(
-            new ThrowableObject(x, this.character.y + 125, this.character.otherDirection)
+            new ThrowableObject(x, this.character.y + 145, this.character.otherDirection)
         );
 
         this.bottleCount--;
@@ -110,18 +98,14 @@ class World {
         this.updateBottleBar();
     }
 
-    /**
-     * Checks enemy contacts.
-     * @returns {void}
-     */
     checkEnemies() {
         for (let i = 0; i < this.level.enemies.length; i++) {
             const enemy = this.level.enemies[i];
+
+            if (enemy.dead || enemy.isDefeated) continue;
             if (!this.character.isColliding(enemy)) continue;
 
-            if (enemy instanceof Endboss) {
-                continue;
-            }
+            if (enemy instanceof Endboss) continue;
 
             if (this.isJumpHit(enemy)) {
                 this.removeEnemy(enemy, i, true);
@@ -131,25 +115,14 @@ class World {
         }
     }
 
-    /**
-     * Checks jump hit.
-     * @param {MovableObject} enemy Enemy object.
-     * @returns {boolean} True if hit from above.
-     */
     isJumpHit(enemy) {
-        if (this.character.speedY >= 0) return false;
+        const playerBottom = this.character.y + this.character.height - (this.character.offset?.bottom || 0);
+        const enemyTop = enemy.y + (enemy.offset?.top || 0);
+        const tolerance = enemy instanceof ChickenSmall ? 115 : 80;
 
-        const feet = this.character.y + this.character.height - this.character.offset.bottom;
-        const head = enemy.y + (enemy.offset?.top || 0);
-        const limit = enemy instanceof ChickenSmall ? 98 : 58;
-
-        return feet <= head + limit;
+        return this.character.speedY < 0 && playerBottom <= enemyTop + tolerance;
     }
 
-    /**
-     * Damages player.
-     * @returns {void}
-     */
     damagePlayer() {
         if (this.character.isHurt()) return;
 
@@ -157,31 +130,25 @@ class World {
         this.lifeBar.setPercentage(this.character.energy);
     }
 
-    /**
-     * Removes one enemy.
-     * @param {MovableObject} enemy Enemy object.
-     * @param {number} index Enemy index.
-     * @param {boolean} bounce Player bounce.
-     * @returns {void}
-     */
     removeEnemy(enemy, index, bounce = false) {
+        enemy.dead = true;
+        enemy.isDefeated = true;
+
         if (typeof enemy.die === "function") enemy.die();
         else if (typeof enemy.defeat === "function") enemy.defeat();
         else if (typeof enemy.kill === "function") enemy.kill();
 
-        if (bounce) this.character.speedY = 24;
+        if (bounce) this.character.speedY = 28;
 
-        const remove = () => this.level.enemies.splice(index, 1);
-        window.setTimeout(remove, 275);
+        window.setTimeout(() => {
+            this.level.enemies.splice(index, 1);
+        }, 275);
     }
 
-    /**
-     * Checks items.
-     * @returns {void}
-     */
     checkCollectibles() {
         for (let i = this.bottleItems.length - 1; i >= 0; i--) {
             if (!this.character.isColliding(this.bottleItems[i])) continue;
+
             this.bottleItems.splice(i, 1);
             this.bottleCount++;
             this.updateBottleBar();
@@ -189,26 +156,20 @@ class World {
 
         for (let i = this.coinItems.length - 1; i >= 0; i--) {
             if (!this.character.isColliding(this.coinItems[i])) continue;
+
             this.coinItems.splice(i, 1);
             this.coinCount++;
             this.updateCoinBar();
         }
     }
 
-    /**
-     * Updates bottle bar.
-     * @returns {void}
-     */
     updateBottleBar() {
         let value = this.bottleCount * 25;
         if (value > 100) value = 100;
+
         this.bottleBar.setBottlePercentage(value);
     }
 
-    /**
-     * Updates coin bar.
-     * @returns {void}
-     */
     updateCoinBar() {
         const total = this.coinCount + this.coinItems.length;
 
@@ -219,13 +180,10 @@ class World {
 
         let value = (this.coinCount / total) * 100;
         if (value > 100) value = 100;
+
         this.coinBar.setBottlePercentage(value);
     }
 
-    /**
-     * Checks bottle hits.
-     * @returns {void}
-     */
     checkBottleHits() {
         for (let b = 0; b < this.flyingBottles.length; b++) {
             const bottle = this.flyingBottles[b];
@@ -233,20 +191,16 @@ class World {
 
             for (let e = this.level.enemies.length - 1; e >= 0; e--) {
                 const enemy = this.level.enemies[e];
+
+                if (enemy.dead || enemy.isDefeated) continue;
                 if (!bottle.isColliding(enemy)) continue;
+
                 this.handleBottleHit(bottle, enemy, e);
                 break;
             }
         }
     }
 
-    /**
-     * Handles one bottle hit.
-     * @param {ThrowableObject} bottle Thrown bottle.
-     * @param {MovableObject} enemy Enemy object.
-     * @param {number} index Enemy index.
-     * @returns {void}
-     */
     handleBottleHit(bottle, enemy, index) {
         if (typeof bottle.breakBottle === "function") {
             bottle.breakBottle(false, false);
@@ -260,10 +214,6 @@ class World {
         this.removeEnemy(enemy, index);
     }
 
-    /**
-     * Removes inactive bottles.
-     * @returns {void}
-     */
     cleanBottles() {
         for (let i = this.flyingBottles.length - 1; i >= 0; i--) {
             const bottle = this.flyingBottles[i];
@@ -275,10 +225,6 @@ class World {
         }
     }
 
-    /**
-     * Draws the world.
-     * @returns {void}
-     */
     render() {
         if (this.gameOver || this.paused) return;
 
@@ -300,19 +246,10 @@ class World {
         window.requestAnimationFrame(() => this.render());
     }
 
-    /**
-     * Clears canvas.
-     * @returns {void}
-     */
     clearCanvas() {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     }
 
-    /**
-     * Draws object group.
-     * @param {DrawableObject[]} group Drawable objects.
-     * @returns {void}
-     */
     drawGroup(group) {
         if (!group) return;
 
@@ -321,11 +258,6 @@ class World {
         }
     }
 
-    /**
-     * Draws one object.
-     * @param {DrawableObject} object Drawable object.
-     * @returns {void}
-     */
     drawObject(object) {
         if (!object) return;
 
@@ -338,27 +270,22 @@ class World {
         this.ctx.save();
         this.ctx.translate(object.width, 0);
         this.ctx.scale(-1, 1);
+
         object.x = object.x * -1;
         object.draw(this.ctx);
         if (typeof object.drawFrame === "function") object.drawFrame(this.ctx);
         object.x = object.x * -1;
+
         this.ctx.restore();
     }
 
-    /**
-     * Stops world.
-     * @param {Function} screenFunction Screen function.
-     * @param {number} delay Delay.
-     * @returns {void}
-     */
     finishWorld(screenFunction, delay = 310) {
         this.gameOver = true;
 
-        const openScreen = () => {
-            if (typeof screenFunction !== "function") return;
-            screenFunction();
-        };
-
-        window.setTimeout(openScreen, delay);
+        window.setTimeout(() => {
+            if (typeof screenFunction === "function") {
+                screenFunction();
+            }
+        }, delay);
     }
 }

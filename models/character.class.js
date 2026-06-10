@@ -1,12 +1,13 @@
 class Character extends MovableObject {
     world;
 
-    x = 100;
-    y = 165;
+    x = 80;
+    y = 180;
     width = 100;
     height = 250;
     speed = 10;
     groundY = 180;
+    
 
     offset = {
         top: 60,
@@ -195,7 +196,7 @@ class Character extends MovableObject {
      * @returns {void}
      */
     jump() {
-        this.speedY = 30;
+        this.speedY = 32;
     }
 
     /**

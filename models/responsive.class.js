@@ -45,20 +45,49 @@ class TouchControl {
         const button = this.getElement(buttonId);
         if (!button) return;
 
-        button.addEventListener("pointerdown", event => this.pressKey(event, keyName));
-        button.addEventListener("pointerup", event => this.releaseKey(event, keyName));
-        button.addEventListener("pointercancel", event => this.releaseKey(event, keyName));
+        button.addEventListener("touchstart", event => this.pressOnly(event, keyName), { passive: false });
+        button.addEventListener("touchend", event => this.releaseOnly(event, keyName), { passive: false });
+        button.addEventListener("touchcancel", event => this.releaseOnly(event, keyName), { passive: false });
+
+        button.addEventListener("mousedown", event => this.pressOnly(event, keyName));
+        button.addEventListener("mouseup", event => this.releaseOnly(event, keyName));
+        button.addEventListener("mouseleave", event => this.releaseOnly(event, keyName));
+
         button.addEventListener("contextmenu", event => event.preventDefault());
     }
 
-    pressKey(event, keyName) {
+    pressOnly(event, keyName) {
         event.preventDefault();
+        event.stopPropagation();
+
+        this.releaseMovementKeysIfNeeded(keyName);
         this.keyboard[keyName] = true;
     }
 
-    releaseKey(event, keyName) {
+    releaseOnly(event, keyName) {
         event.preventDefault();
+        event.stopPropagation();
+
         this.keyboard[keyName] = false;
+    }
+
+    releaseMovementKeysIfNeeded(keyName) {
+        if (keyName === "LEFT") {
+            this.keyboard.RIGHT = false;
+            this.keyboard.SPACE = false;
+            return;
+        }
+
+        if (keyName === "RIGHT") {
+            this.keyboard.LEFT = false;
+            this.keyboard.SPACE = false;
+            return;
+        }
+
+        if (keyName === "SPACE") {
+            this.keyboard.LEFT = false;
+            this.keyboard.RIGHT = false;
+        }
     }
 
     connectScreenEvents() {
