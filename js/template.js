@@ -1,77 +1,92 @@
 function getTopBarTemplate() {
   return `
     <div id="gameToolbar" class="game-toolbar">
-      <div class="toolbar-desktop-group wide-screen-tools">
-        <button class="toolbar-icon-button game-only-tool" onclick="returnToStartScreen()">
-          <img src="./assets/img/8_coin/back.png" alt="Zurück">
-        </button>
+      ${getDesktopToolsTemplate()}
+      ${getCompactToolsTemplate()}
+    </div>
+  `;
+}
 
-        <button class="toolbar-icon-button sound-control-button game-only-tool" onclick="switchAudioMode()">
-          <img id="soundIconDesktop" src="./assets/img/8_coin/audio.png" alt="Ton">
-          <span id="soundLineDesktop" class="sound-cross-line sound-line-hidden"></span>
-        </button>
+function getDesktopToolsTemplate() {
+  return `
+    <div class="toolbar-desktop-group wide-screen-tools">
+      ${getIconButton("toolbar-icon-button game-only-tool", "returnToStartScreen()", "./assets/img/8_coin/back.png", "Zurück")}
+      ${getSoundButton("toolbar-icon-button", "soundIconDesktop", "soundLineDesktop")}
+      ${getIconButton("toolbar-icon-button game-only-tool", "mobileControls.toggleFullscreen()", "./assets/img/8_coin/fullscreen.png", "Vollbild")}
+      ${getIconButton("toolbar-icon-button game-only-tool", "restartRoundDirectly()", "./assets/img/8_coin/neustart.png", "Neustart", "restartToolbarButton")}
+    </div>
+  `;
+}
 
-        <button class="toolbar-icon-button game-only-tool" onclick="mobileControls.toggleFullscreen()">
-          <img src="./assets/img/8_coin/fullscreen.png" alt="Vollbild">
-        </button>
-
-        <button id="restartToolbarButton" class="toolbar-icon-button game-only-tool" onclick="restartRoundDirectly()">
-          <img src="./assets/img/8_coin/neustart.png" alt="Neustart">
-        </button>
-      </div>
-
-      <div class="quick-tools-wrap compact-layer">
-        <div id="quickToolsPanel" class="quick-tools-panel">
-          <button class="quick-tool-button game-only-tool" onclick="returnToStartScreen()">
-            <img src="./assets/img/8_coin/back.png" alt="Zurück">
-          </button>
-
-          <button class="quick-tool-button sound-control-button game-only-tool" onclick="switchAudioMode()">
-            <img id="soundIconCompact" src="./assets/img/8_coin/audio.png" alt="Ton">
-            <span id="soundLineCompact" class="sound-cross-line sound-line-hidden"></span>
-          </button>
-
-          <button class="quick-tool-button game-only-tool" onclick="mobileControls.toggleFullscreen()">
-            <img src="./assets/img/8_coin/fullscreen.png" alt="Vollbild">
-          </button>
-
-          <button class="quick-tool-button" onclick="openDialogFromMenu('imprintDialog')">
-            <img src="./assets/img/8_coin/info.png" alt="Info">
-          </button>
-
-          <button class="quick-tool-button" onclick="openDialogFromMenu('instructionDialog')">
-            <img src="./assets/img/questioning.png" alt="Hilfe">
-          </button>
-        </div>
+function getCompactToolsTemplate() {
+  return `
+    <div class="quick-tools-wrap compact-layer">
+      <div id="quickToolsPanel" class="quick-tools-panel">
+        ${getIconButton("quick-tool-button game-only-tool", "returnToStartScreen()", "./assets/img/8_coin/back.png", "Zurück")}
+        ${getSoundButton("quick-tool-button", "soundIconCompact", "soundLineCompact")}
+        ${getIconButton("quick-tool-button game-only-tool", "mobileControls.toggleFullscreen()", "./assets/img/8_coin/fullscreen.png", "Vollbild")}
+        ${getIconButton("quick-tool-button", "openDialogFromMenu('imprintDialog')", "./assets/img/8_coin/info.png", "Info")}
+        ${getIconButton("quick-tool-button", "openDialogFromMenu('instructionDialog')", "./assets/img/questioning.png", "Hilfe")}
       </div>
     </div>
+  `;
+}
+
+function getIconButton(buttonClass, clickAction, imagePath, imageAlt, buttonId = "") {
+  return `
+    <button${buttonId ? ` id="${buttonId}"` : ""} class="${buttonClass}" onclick="${clickAction}">
+      <img src="${imagePath}" alt="${imageAlt}">
+    </button>
+  `;
+}
+
+function getSoundButton(buttonClass, iconId, lineId) {
+  return `
+    <button class="${buttonClass} sound-control-button game-only-tool" onclick="switchAudioMode()">
+      <img id="${iconId}" src="./assets/img/8_coin/audio.png" alt="Ton">
+      <span id="${lineId}" class="sound-cross-line sound-line-hidden"></span>
+    </button>
   `;
 }
 
 function getStartButtonTemplate() {
   return `
     <div id="launchPanel" class="launch-panel">
-      <button id="startGameButton" class="launch-button" type="button">
-        Spiel starten
-      </button>
-
-      <button id="playAgainButton" class="launch-button" type="button" onclick="restartRoundDirectly()" style="display: none;">
-        Erneut Spielen
-      </button>
+      ${getStartGameButton()}
+      ${getPlayAgainButton()}
     </div>
+  `;
+}
+
+function getStartGameButton() {
+  return `
+    <button id="startGameButton" class="launch-button" type="button">
+      Spiel starten
+    </button>
+  `;
+}
+
+function getPlayAgainButton() {
+  return `
+    <button id="playAgainButton" class="launch-button" type="button" onclick="restartRoundDirectly()" style="display: none;">
+      Erneut Spielen
+    </button>
   `;
 }
 
 function getBottomButtonsTemplate() {
   return `
     <div id="footerActionRow" class="footer-action-row wide-screen-tools">
-      <button class="footer-action-button" type="button" onclick="openDialog('imprintDialog')">
-        Impressum
-      </button>
-
-      <button class="footer-action-button" type="button" onclick="openDialog('instructionDialog')">
-        Spielübersicht
-      </button>
+      ${getFooterButton("openDialog('imprintDialog')", "Impressum")}
+      ${getFooterButton("openDialog('instructionDialog')", "Spielübersicht")}
     </div>
+  `;
+}
+
+function getFooterButton(clickAction, label) {
+  return `
+    <button class="footer-action-button" type="button" onclick="${clickAction}">
+      ${label}
+    </button>
   `;
 }
