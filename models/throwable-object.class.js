@@ -49,13 +49,7 @@ class ThrowableObject extends MovableObject {
     moveInAir() {
         if (this.broken) return;
 
-        let nextX = this.x + 10;
-
-        if (this.otherDirection) {
-            nextX = this.x - 10;
-        }
-
-        this.x = nextX;
+        this.x += this.otherDirection ? -10 : 10;
 
         if (this.isOnFloor()) {
             this.breakBottle();
@@ -91,14 +85,10 @@ class ThrowableObject extends MovableObject {
      * @returns {void}
      */
     showSplashImage() {
-        this.y = this.floorLine;
+        if (this.y > this.floorLine) this.y = this.floorLine;
+
         this.img = this.imageCache[this.splashImage];
-
-        const removeBottle = () => {
-            this.markedForRemoval = true;
-        };
-
-        window.setTimeout(removeBottle, 180);
+        window.setTimeout(() => this.markedForRemoval = true, 180);
     }
 
     /**

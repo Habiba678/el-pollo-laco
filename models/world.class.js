@@ -96,6 +96,8 @@ class World {
     checkThrow() {
         if (!this.keyboard.D || this.bottleCount <= 0) return;
 
+        this.character.resetIdle();
+
         const x = this.character.otherDirection ? this.character.x + 25 : this.character.x + 95;
         const y = this.character.y + 145;
 
@@ -231,7 +233,7 @@ class World {
      * @param {number} index Enemy index.
      */
     handleBottleHit(bottle, enemy, index) {
-        bottle.breakBottle?.(false, false);
+        bottle.breakBottle?.();
         this.playSound("bottleBreak");
 
         if (enemy instanceof Endboss) return this.hitEndboss(enemy);
@@ -244,7 +246,6 @@ class World {
      */
     hitEndboss(enemy) {
         this.endbossManager.handleBottleHit(enemy);
-        this.playSound("endbossHit");
     }
 
     /** Removes inactive bottles. */
@@ -280,17 +281,23 @@ class World {
 
     /** Draws all world objects. */
     drawWorldObjects() {
-        const groups = [
-            this.level.backgroundObjects,
-            this.level.clouds,
-            this.flyingBottles,
-            this.bottleItems,
-            this.coinItems,
-            this.level.enemies
-        ];
+        this.drawGroup(this.level.backgroundObjects);
+        this.drawGroup(this.level.clouds);
+        this.drawGroup(this.flyingBottles);
+        this.drawGroup(this.bottleItems);
+        this.drawGroup(this.coinItems);
+        this.drawDepthObjects();
+    }
 
-        groups.forEach(group => this.drawGroup(group));
-        this.drawObject(this.character);
+    /** Draws character and enemies by vertical depth. */
+    drawDepthObjects() {
+        const depthObjects = [this.character, ...this.level.enemies];
+
+        depthObjects.sort((a, b) => {
+            return (a.y + a.height) - (b.y + b.height);
+        });
+
+        this.drawGroup(depthObjects);
     }
 
     /** Clears canvas. */

@@ -53,7 +53,7 @@ class GameAudio {
      */
     unlockAfterUserAction() {
         const unlock = () => {
-            this.unlocked = true;
+            this.unlockAudio();
             window.removeEventListener("click", unlock);
             window.removeEventListener("touchend", unlock);
             window.removeEventListener("keyup", unlock);
@@ -62,6 +62,15 @@ class GameAudio {
         window.addEventListener("click", unlock);
         window.addEventListener("touchend", unlock);
         window.addEventListener("keyup", unlock);
+    }
+
+    /**
+     * Unlocks audio manually after a user action.
+     * @returns {void}
+     */
+    unlockAudio() {
+        this.unlocked = true;
+        this.soundLocked = false;
     }
 
     /**
@@ -156,9 +165,7 @@ class GameAudio {
      * @returns {void}
      */
     stopEffect(name) {
-        if (name === "run") {
-            this.stopOneSound(this.walkSound, true);
-        }
+        if (name === "run") this.stopOneSound(this.walkSound, true);
     }
 
     /**
@@ -171,10 +178,7 @@ class GameAudio {
         if (!this.canPlay(sound)) return;
         if (!sound.paused && !restart) return;
 
-        if (restart) {
-            sound.currentTime = 0;
-        }
-
+        if (restart) sound.currentTime = 0;
         sound.play().catch(() => {});
     }
 
@@ -192,14 +196,8 @@ class GameAudio {
         copy.currentTime = 0;
 
         this.shortSounds.add(copy);
-
-        copy.onended = () => {
-            this.shortSounds.delete(copy);
-        };
-
-        copy.play().catch(() => {
-            this.shortSounds.delete(copy);
-        });
+        copy.onended = () => this.shortSounds.delete(copy);
+        copy.play().catch(() => this.shortSounds.delete(copy));
     }
 
     /**
@@ -223,7 +221,6 @@ class GameAudio {
         this.stopOneSound(this.loseTheme, true);
         this.stopOneSound(this.noBottleTheme, true);
         this.stopOneSound(this.walkSound, true);
-
         this.stopShortSounds();
     }
 
@@ -237,10 +234,7 @@ class GameAudio {
         if (!sound) return;
 
         sound.pause();
-
-        if (reset) {
-            sound.currentTime = 0;
-        }
+        if (reset) sound.currentTime = 0;
     }
 
     /**

@@ -430,3 +430,26 @@ body.win-mode .player-input-board {
   background: #d9a39d;
   border-radius: 10px;
 }
+
+body:not(.touch-device) .player-input-board {
+  display: none !important;
+}
+
+.ui-hidden {
+  display: none !important;
+}
+
+.ui-flex {
+  display: flex !important;
+}
+
+.ui-block {
+  display: block !important;
+}
+
+.input-icon {
+  width: 26px;
+  height: 26px;
+  object-fit: contain;
+  pointer-events: none;
+}

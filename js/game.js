@@ -1,3 +1,7 @@
+/**
+ * Controls setup, input handling and game flow.
+ */
+
 let canvas;
 let ctx;
 let world;
@@ -12,12 +16,12 @@ let isGameFinished = false;
 let audioMuted = false;
 
 const INPUT_MAP = new Map([
-    [37, "LEFT"],
-    [39, "RIGHT"],
-    [38, "UP"],
-    [40, "DOWN"],
-    [32, "SPACE"],
-    [68, "D"]
+    ["ArrowLeft", "LEFT"],
+    ["ArrowRight", "RIGHT"],
+    ["ArrowUp", "UP"],
+    ["ArrowDown", "DOWN"],
+    ["Space", "SPACE"],
+    ["KeyD", "D"]
 ]);
 
 const END_IMAGES = {
@@ -57,7 +61,6 @@ function insertPageTemplates() {
  */
 function collectPageParts() {
     cacheUiElements();
-
     canvas = getElement("canvas");
 
     if (!canvas) {
@@ -151,6 +154,7 @@ function beginRound() {
 
     refreshGameUi();
 
+    gameAudio.unlockAudio();
     world = new World(canvas, keyboard, gameAudio);
     gameAudio.playMainTheme();
 }
@@ -189,7 +193,7 @@ function closeRunningWorld() {
  * @returns {void}
  */
 function setInputByEvent(event, active) {
-    const inputName = INPUT_MAP.get(event.keyCode);
+    const inputName = INPUT_MAP.get(event.code);
 
     if (inputName) keyboard[inputName] = active;
 }
@@ -224,6 +228,7 @@ function switchAudioMode() {
     updateSoundUi(audioMuted);
 
     if (!audioMuted && isGameRunning) {
+        gameAudio.unlockAudio();
         gameAudio.playMainTheme();
     }
 }

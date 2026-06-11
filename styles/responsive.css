@@ -351,3 +351,9 @@
     bottom: 5%;
   }
 }
+
+@media only screen and (pointer: fine) {
+  .player-input-board {
+    display: none !important;
+  }
+}

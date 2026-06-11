@@ -1,3 +1,4 @@
+
 let gameToolbar;
 let startGameButton;
 let playAgainButton;
@@ -68,25 +69,27 @@ function refreshGameUi() {
     const showStartControls = !isGameRunning && !isGameFinished;
     const showRestartControls = isGameFinished;
 
-    setElementDisplay("launchPanel", showStartControls || showRestartControls, "flex");
-    setElementDisplay("footerActionRow", showStartControls, "flex");
-
-    if (startGameButton) startGameButton.style.display = showStartControls ? "flex" : "none";
-    if (playAgainButton) playAgainButton.style.display = showRestartControls ? "flex" : "none";
-    if (restartToolbarButton) restartToolbarButton.style.display = isGameRunning ? "flex" : "none";
+    setElementDisplay("launchPanel", showStartControls || showRestartControls, "ui-flex");
+    setElementDisplay("footerActionRow", showStartControls, "ui-flex");
+    setElementDisplay("startGameButton", showStartControls, "ui-flex");
+    setElementDisplay("playAgainButton", showRestartControls, "ui-flex");
+    setElementDisplay("restartToolbarButton", isGameRunning, "ui-flex");
 }
 
 /**
- * Shows or hides one element.
+ * Shows or hides one element by class.
  * @param {string} elementId Element id.
  * @param {boolean} visible True if visible.
- * @param {string} displayStyle CSS display value.
+ * @param {string} displayClass Visible display class.
  * @returns {void}
  */
-function setElementDisplay(elementId, visible, displayStyle = "block") {
+function setElementDisplay(elementId, visible, displayClass = "ui-block") {
     const element = document.getElementById(elementId);
 
-    if (element) element.style.display = visible ? displayStyle : "none";
+    if (!element) return;
+
+    element.classList.remove("ui-hidden", "ui-flex", "ui-block");
+    element.classList.add(visible ? displayClass : "ui-hidden");
 }
 
 /**
