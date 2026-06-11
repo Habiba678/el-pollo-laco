@@ -1,3 +1,6 @@
+/**
+ * Base class for drawable objects.
+ */
 class DrawableObject {
     img;
     imageCache = {};
@@ -8,8 +11,9 @@ class DrawableObject {
     width = 100;
 
     /**
-     * Loads one image for this object.
-     * @param {string} path Path to the image file.
+     * Loads one image.
+     * @param {string} path Image path.
+     * @returns {void}
      */
     loadImage(path) {
         this.img = new Image();
@@ -17,31 +21,22 @@ class DrawableObject {
     }
 
     /**
-     * Draws the object image on the canvas.
-     * @param {CanvasRenderingContext2D} ctx Canvas rendering context.
+     * Draws the image.
+     * @param {CanvasRenderingContext2D} ctx Canvas context.
+     * @returns {void}
      */
     draw(ctx) {
-        if (!this.img) {
-            console.log("No image available:", this);
+        if (!this.img || !this.img.complete || this.img.naturalWidth === 0) {
             return;
         }
-    
-        if (!this.img.complete) {
-            console.log("Image is still loading:", this.img.src);
-            return;
-        }
-    
-        if (this.img.naturalWidth === 0) {
-            console.log("Broken image path:", this.img.src, this);
-            return;
-        }
-    
+
         ctx.drawImage(this.img, this.x, this.y, this.width, this.height);
     }
 
     /**
-     * Preloads several images and stores them in the image cache.
-     * @param {string[]} paths Image paths for animation frames.
+     * Loads multiple images.
+     * @param {string[]} paths Image paths.
+     * @returns {void}
      */
     loadImages(paths) {
         paths.forEach((path) => {
