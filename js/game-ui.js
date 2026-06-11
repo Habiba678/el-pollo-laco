@@ -1,3 +1,6 @@
+/**
+ * Manages dialogs, templates, buttons and IU updates.
+ */
 
 let gameToolbar;
 let startGameButton;
