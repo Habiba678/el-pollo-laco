@@ -70,7 +70,7 @@ function getBottomButtonsTemplate() {
       </button>
 
       <button class="footer-action-button" type="button" onclick="openDialog('instructionDialog')">
-        Spielhilfe
+        Spielübersicht
       </button>
     </div>
   `;

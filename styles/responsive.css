@@ -137,6 +137,19 @@
     height: 40px;
     font-size: 17px;
   }
+
+  .footer-action-button,
+  .launch-button {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    line-height: 1;
+    padding-top: 3px;
+  }
+
+  .footer-action-button:last-child {
+    text-indent: 12px;
+  }
 }
 
 @media only screen and (max-width: 500px) {
@@ -160,6 +173,20 @@
   .quick-tool-button img {
     width: 18px;
     height: 18px;
+  }
+
+   
+  .footer-action-button,
+  .launch-button {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    line-height: 1;
+    padding-top: 3px;
+  }
+
+  .footer-action-button:last-child {
+    text-indent: 12px;
   }
 }
 
@@ -198,6 +225,20 @@
     height: 36px;
     font-size: 16px;
   }
+   
+   
+  .footer-action-button,
+  .launch-button {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    line-height: 1;
+    padding-top: 3px;
+  }
+
+  .footer-action-button:last-child {
+    text-indent: 12px;
+  }
 }
 
 @media only screen and (max-width: 400px) {
@@ -209,9 +250,22 @@
   }
 
   .footer-action-button {
-    max-width: 280px;
+    max-width: 250px;
     height: 34px;
     font-size: 16px;
+  }
+  
+  .footer-action-button,
+  .launch-button {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    line-height: 1;
+    padding-top: 3px;
+  }
+
+  .footer-action-button:last-child {
+    text-indent: 12px;
   }
 }
 
@@ -231,11 +285,25 @@
     width: 14px;
     height: 14px;
   }
+
+    
+  .footer-action-button,
+  .launch-button {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    line-height: 1;
+    padding-top: 3px;
+  }
+
+  .footer-action-button:last-child {
+    text-indent: 12px;
+  }
 }
 
 @media only screen and (pointer: coarse) and (orientation: landscape) {
   body {
-    min-height: 100svh;
+    min-height: 100vh;
     padding: 0;
     margin: 0;
   }

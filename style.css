@@ -302,6 +302,11 @@ body.dialog-open {
   font-family: 'Rye', cursive;
   text-shadow: 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
   box-shadow: 0 4px 0 #d98a1f, 0 8px 16px rgba(240, 173, 66, 0.28);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  line-height: 1;
 }
 
 .player-input-board {

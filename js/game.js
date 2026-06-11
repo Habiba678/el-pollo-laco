@@ -65,7 +65,7 @@ function collectPageParts() {
         return;
     }
 
-    ctx = canvas.getContext("2d");
+    ctx = canvas.getContext("2d", { willReadFrequently: true });
 }
 
 /**
