@@ -24,6 +24,7 @@ class GameAudio {
         this.enemyKillSound = this.makeSound("./assets/audio/enemy-kill.mp3", false, 0.06);
         this.characterHitSound = this.makeSound("./assets/audio/character-hit.mp3", false, 0.07);
         this.endbossHitSound = this.makeSound("./assets/audio/endboss-hit.mp3", false, 0.05);
+        this.snoreSound = this.makeSound("./assets/audio/snore.mp3", true, 0.04);
 
         this.shortSounds = new Set();
         this.unlockAfterUserAction();
@@ -97,9 +98,7 @@ class GameAudio {
         this.audioMuted = !this.audioMuted;
         this.saveMuteSetting();
 
-        if (this.audioMuted) {
-            this.stopAllAudio();
-        }
+        if (this.audioMuted) this.stopAllAudio();
 
         return this.audioMuted;
     }
@@ -157,6 +156,7 @@ class GameAudio {
         if (name === "enemyKill") this.playShortSound(this.enemyKillSound);
         if (name === "characterHit") this.playShortSound(this.characterHitSound);
         if (name === "endbossHit") this.playShortSound(this.endbossHitSound);
+        if (name === "snore") this.playLongSound(this.snoreSound, false);
     }
 
     /**
@@ -166,6 +166,7 @@ class GameAudio {
      */
     stopEffect(name) {
         if (name === "run") this.stopOneSound(this.walkSound, true);
+        if (name === "snore") this.stopOneSound(this.snoreSound, true);
     }
 
     /**
@@ -221,6 +222,7 @@ class GameAudio {
         this.stopOneSound(this.loseTheme, true);
         this.stopOneSound(this.noBottleTheme, true);
         this.stopOneSound(this.walkSound, true);
+        this.stopOneSound(this.snoreSound, true);
         this.stopShortSounds();
     }
 

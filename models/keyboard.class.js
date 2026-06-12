@@ -1,6 +1,6 @@
 /**
- * Keeps track of the current keyboard input used in the game.
- */
+* Keeps track of the current keyboard input used in the game.
+*/
 class Keyboard {
     LEFT = false;
     RIGHT = false;

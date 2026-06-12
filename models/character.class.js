@@ -79,9 +79,7 @@ class Character extends MovableObject {
     knockbackTimer = null;
     isKnockedBack = false;
 
-    /**
-     * Creates the character.
-     */
+    /** Creates the character. */
     constructor() {
         super();
         this.loadImage(this.idleImages[0]);
@@ -90,10 +88,7 @@ class Character extends MovableObject {
         this.startLoops();
     }
 
-    /**
-     * Loads all character image groups.
-     * @returns {void}
-     */
+    /** Loads all character image groups. */
     loadCharacterImages() {
         this.loadImages(this.idleImages);
         this.loadImages(this.longIdleImages);
@@ -103,19 +98,13 @@ class Character extends MovableObject {
         this.loadImages(this.deadImages);
     }
 
-    /**
-     * Starts character loops.
-     * @returns {void}
-     */
+    /** Starts character loops. */
     startLoops() {
         setInterval(() => this.updateMovement(), 1000 / 60);
         setInterval(() => this.updateAnimation(), 80);
     }
 
-    /**
-     * Updates movement and camera.
-     * @returns {void}
-     */
+    /** Updates movement and camera. */
     updateMovement() {
         if (!this.world || this.world.gameOver) return;
 
@@ -125,10 +114,7 @@ class Character extends MovableObject {
         this.world.camera_x = -this.x + 100;
     }
 
-    /**
-     * Handles movement keys.
-     * @returns {void}
-     */
+    /** Handles movement keys. */
     moveByInput() {
         if (this.isKnockedBack) return;
 
@@ -139,7 +125,6 @@ class Character extends MovableObject {
     /**
      * Handles one movement direction.
      * @param {string} direction Movement direction.
-     * @returns {void}
      */
     handleSideMove(direction) {
         if (!this.canMoveSide(direction)) return;
@@ -165,10 +150,7 @@ class Character extends MovableObject {
         return this.world.keyboard.LEFT && this.x > 0;
     }
 
-    /**
-     * Handles jump input.
-     * @returns {void}
-     */
+    /** Handles jump input. */
     jumpByInput() {
         if (this.isKnockedBack) return;
         if (!this.world.keyboard.SPACE || this.isAboveGround()) return;
@@ -179,26 +161,17 @@ class Character extends MovableObject {
         this.jumpFrame = 0;
     }
 
-    /**
-     * Checks air state.
-     * @returns {boolean} True if character is above ground.
-     */
+    /** Checks air state. */
     isAboveGround() {
         return this.y < this.groundY;
     }
 
-    /**
-     * Starts jump.
-     * @returns {void}
-     */
+    /** Starts jump. */
     jump() {
         this.speedY = 32;
     }
 
-    /**
-     * Checks boss blocking.
-     * @returns {boolean} True if boss blocks.
-     */
+    /** Checks boss blocking. */
     isBossBlocking() {
         const boss = this.world?.endbossManager?.findEndboss();
 
@@ -209,11 +182,7 @@ class Character extends MovableObject {
         return this.isNearBossSide(boss) && this.hasBossHeightOverlap(boss);
     }
 
-    /**
-     * Checks horizontal boss block.
-     * @param {Endboss} boss Boss object.
-     * @returns {boolean} True if boss is in front.
-     */
+    /** Checks horizontal boss block. */
     isNearBossSide(boss) {
         const characterRight = this.x + this.width - this.offset.right;
         const bossLeft = boss.x + (boss.offset?.left || 0);
@@ -221,11 +190,7 @@ class Character extends MovableObject {
         return characterRight + this.speed >= bossLeft && this.x < boss.x;
     }
 
-    /**
-     * Checks vertical boss overlap.
-     * @param {Endboss} boss Boss object.
-     * @returns {boolean} True if vertical overlap exists.
-     */
+    /** Checks vertical boss overlap. */
     hasBossHeightOverlap(boss) {
         const characterTop = this.y + this.offset.top;
         const characterBottom = this.y + this.height - this.offset.bottom;
@@ -235,10 +200,7 @@ class Character extends MovableObject {
         return characterBottom > bossTop && characterTop < bossBottom;
     }
 
-    /**
-     * Updates character animation.
-     * @returns {void}
-     */
+    /** Updates character animation. */
     updateAnimation() {
         if (!this.world || this.world.gameOver) return;
         if (this.isDead()) return this.playAnimation(this.deadImages);
@@ -249,10 +211,7 @@ class Character extends MovableObject {
         this.playIdleAnimation();
     }
 
-    /**
-     * Plays jump animation.
-     * @returns {void}
-     */
+    /** Plays jump animation. */
     playJumpAnimation() {
         const index = Math.min(this.jumpFrame, this.jumpingImages.length - 1);
 
@@ -260,82 +219,69 @@ class Character extends MovableObject {
         if (this.jumpFrame < this.jumpingImages.length - 1) this.jumpFrame++;
     }
 
-    /**
-     * Plays idle animation.
-     * @returns {void}
-     */
+    /** Plays idle animation. */
     playIdleAnimation() {
         if (this.idleCounter < 30) {
+            this.stopSnoreAudio();
             this.playAnimation(this.idleImages);
             this.idleCounter++;
             return;
         }
 
+        this.playSnoreAudio();
         this.playAnimation(this.longIdleImages);
     }
 
-    /**
-     * Checks movement state.
-     * @returns {boolean} True if character is moving.
-     */
+    /** Checks movement state. */
     isMoving() {
         return this.world.keyboard.LEFT ||
             this.world.keyboard.RIGHT ||
             this.isKnockedBack;
     }
 
-    /**
-     * Resets idle timer.
-     * @returns {void}
-     */
+    /** Resets idle timer. */
     resetIdle() {
         this.idleCounter = 0;
+        this.stopSnoreAudio();
     }
 
-    /**
-     * Plays walking sound.
-     * @returns {void}
-     */
+    /** Plays walking sound. */
     playWalkAudio() {
         this.playCharacterSound("run");
     }
 
-    /**
-     * Stops walking sound.
-     * @returns {void}
-     */
+    /** Stops walking sound. */
     stopWalkAudio() {
         if (!this.world?.gameAudio) return;
 
         this.world.gameAudio.stopEffect("run");
     }
 
-    /**
-     * Plays jump sound.
-     * @returns {void}
-     */
+    /** Plays jump sound. */
     playJumpAudio() {
         this.playCharacterSound("jump");
     }
 
-    /**
-     * Plays one character sound.
-     * @param {string} name Sound name.
-     * @returns {void}
-     */
+    /** Plays snore sound. */
+    playSnoreAudio() {
+        this.playCharacterSound("snore");
+    }
+
+    /** Stops snore sound. */
+    stopSnoreAudio() {
+        if (!this.world?.gameAudio) return;
+
+        this.world.gameAudio.stopEffect("snore");
+    }
+
+    /** Plays one character sound. */
     playCharacterSound(name) {
         if (!this.world?.gameAudio) return;
 
         this.world.gameAudio.playEffect(name);
     }
 
-    /**
-     * Starts knockback.
-     * @param {number} distance Push distance.
-     * @param {number} jumpPower Jump power.
-     * @param {number} steps Movement steps.
-     * @returns {void}
-     */
+    /** Starts knockback. */
     startKnockback(distance = 120, jumpPower = 26, steps = 12) {
         this.stopKnockback();
         this.isKnockedBack = true;
@@ -343,12 +289,7 @@ class Character extends MovableObject {
         this.runKnockback(distance, steps);
     }
 
-    /**
-     * Runs knockback movement.
-     * @param {number} distance Push distance.
-     * @param {number} steps Movement steps.
-     * @returns {void}
-     */
+    /** Runs knockback movement. */
     runKnockback(distance, steps) {
         const stepDistance = distance / steps;
         let currentStep = 0;
@@ -358,13 +299,7 @@ class Character extends MovableObject {
         }, 1000 / 60);
     }
 
-    /**
-     * Moves one knockback step.
-     * @param {number} stepDistance Step distance.
-     * @param {number} currentStep Current step.
-     * @param {number} steps Max steps.
-     * @returns {number} Updated step.
-     */
+    /** Moves one knockback step. */
     moveKnockbackStep(stepDistance, currentStep, steps) {
         this.x = Math.max(0, this.x - stepDistance);
         currentStep++;
@@ -374,10 +309,7 @@ class Character extends MovableObject {
         return currentStep;
     }
 
-    /**
-     * Stops knockback.
-     * @returns {void}
-     */
+    /** Stops knockback. */
     stopKnockback() {
         if (this.knockbackTimer) {
             clearInterval(this.knockbackTimer);
