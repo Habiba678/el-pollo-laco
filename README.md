@@ -1,56 +1,21 @@
 # El Pollo Loco
 
-El Pollo Loco is a browser game inspired by classic platform games. The project was built with vanilla JavaScript, HTML and CSS.
+El Pollo Loco is a browser-based jump-and-run game inspired by classic platform games. Players control Pepe through different levels, collect coins and bottles, defeat enemies, and complete challenges until reaching the final boss.
 
-## Technologies
+The project was developed with a strong focus on object-oriented programming and interactive gameplay. Features include character animations, collision detection, enemy interactions, sound effects, background music, fullscreen support, and responsive touch controls for mobile devices.
 
-### HTML
-- Game structure
-- Menus and dialogs
-- Touch controls
-- Fullscreen and rotate screen overlays
+Special attention was given to creating a smooth experience across desktop, tablet, and smartphone screens. The game automatically adapts to different screen sizes and supports both keyboard and touch input.
 
-### CSS
-- Responsive design
-- Mobile and desktop layouts
-- Animations and visual effects
-- User interface styling
+Built with
 
-### JavaScript
-- Game logic
-- Character movement
-- Enemy behavior
-- Collision detection
-- Audio management
-- Touch controls
-- Fullscreen functionality
 
-## Features
 
-- Responsive mobile controls
-- Fullscreen mode
-- Rotate device detection
-- Character movement and jumping
-- Bottle throwing mechanics
-- Enemy interactions
-- Sound and music controls
-- Health, coin and bottle status bars
+<p align="left">
+  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/html5/html5-original.svg" width="40" alt="HTML5"/>
+  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/css3/css3-original.svg" width="40" alt="CSS3"/>
+  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/javascript/javascript-original.svg" width="40" alt="JavaScript"/>
+</p>
 
-## Recent Improvements
-
-- Added rainbow outfit character design
-- Updated game icons
-- Improved mobile touch controls
-- Fixed portrait mode pause behavior
-- Improved audio handling on mobile devices
-- Cleaned project structure
-- Removed unnecessary system files
-
-## Project Structure
-
-The project is organized into:
-
-- HTML for the page structure
-- CSS for styling and responsiveness
-- JavaScript classes for game mechanics
-- Assets for images, icons and audio files
+🟧 HTML – Structure and content
+🟦 CSS – Styling, animations and responsive design
+🟨 JavaScript – Game logic, interactions and functionality
