@@ -210,10 +210,21 @@ class TouchControl {
      * @returns {void}
      */
     updateWorldPause(shouldPause) {
-        if (!window.world || !window.isGameRunning) return;
-
+        if (typeof world === "undefined" || !world || !isGameRunning) return;
+    
         world.paused = shouldPause;
-        if (shouldPause) this.resetKeys();
+    
+        if (shouldPause) {
+            this.resetKeys();
+            world.gameAudio?.stopEffect?.("run");
+            world.gameAudio?.stopEffect?.("snore");
+            world.character?.stopSnoreAudio?.();
+            world.gameAudio?.stopOneSound?.(world.gameAudio.mainTheme, false);
+            return;
+        }
+    
+        world.character?.stopSnoreAudio?.();
+        world.gameAudio?.playMainTheme?.();
     }
 
     /**

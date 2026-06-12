@@ -203,11 +203,17 @@ class Character extends MovableObject {
     /** Updates character animation. */
     updateAnimation() {
         if (!this.world || this.world.gameOver) return;
+    
+        if (this.world.paused) {
+            this.stopSnoreAudio();
+            return;
+        }
+    
         if (this.isDead()) return this.playAnimation(this.deadImages);
         if (this.isHurt()) return this.playAnimation(this.hurtImages);
         if (this.isAboveGround()) return this.playJumpAnimation();
         if (this.isMoving()) return this.playAnimation(this.walkingImages);
-
+    
         this.playIdleAnimation();
     }
 
